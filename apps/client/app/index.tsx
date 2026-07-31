@@ -45,7 +45,7 @@ export default function Index() {
               <View className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
               <View>
                 <Text className="text-xs font-bold text-slate-300">API Gateway Online</Text>
-                <Text className="text-[10px] text-emerald-400 font-mono">http://localhost:3000</Text>
+                <Text className="text-[10px] text-emerald-400 font-mono">https://api-amanisrajpoots-projects.vercel.app</Text>
               </View>
             </View>
           </View>

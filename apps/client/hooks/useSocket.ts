@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api-amanisrajpoots-projects.vercel.app';
 
 export function useSocket(branchId?: string) {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -11,7 +11,7 @@ export function useSocket(branchId?: string) {
     // Connect to the WebSocket Gateway
     const socketInstance = io(SOCKET_URL, {
       query: branchId ? { branchId } : {},
-      transports: ['websocket'], // Use WebSocket transport
+      transports: ['websocket'],
       autoConnect: true,
     });
 
