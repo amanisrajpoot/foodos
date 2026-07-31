@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  nats:
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222" # Management port
+    command: ["-js"] # Enable JetStream
+    volumes:
+      - nats_data:/nats/data
+
+volumes:
+  redis_data:
+  nats_data:

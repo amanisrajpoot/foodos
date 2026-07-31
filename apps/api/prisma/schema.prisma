@@ -1,0 +1,1568 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ==========================================
+// Identity & Better Auth Domain
+// ==========================================
+
+model User {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Better Auth Relations
+  sessions Session[]
+  accounts Account[]
+
+  // Extended FoodOS fields
+  phone           String?
+  fullName        String?
+  displayName     String?
+  avatarUrl       String?
+  status          String    @default("ACTIVE") // INVITED, ACTIVE, SUSPENDED, DEACTIVATED
+  lastLoginAt     DateTime?
+  preferredLocale String?   @default("en")
+  metadata        Json?
+
+  memberships Membership[]
+  employees   Employee[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId             String
+  providerId            String
+  userId                String    @db.Uuid
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+model Membership {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String    @db.Uuid
+  userId          String    @db.Uuid
+  restaurantId    String?   @db.Uuid
+  branchId        String?   @db.Uuid
+  scope           String // ORGANIZATION, RESTAURANT, BRANCH
+  status          String    @default("ACTIVE") // INVITED, ACTIVE, SUSPENDED, REMOVED
+  invitedByUserId String?   @db.Uuid
+  invitedAt       DateTime?
+  acceptedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant?  @relation(fields: [restaurantId], references: [id])
+  branch       Branch?      @relation(fields: [branchId], references: [id])
+
+  roles MembershipRole[]
+
+  @@unique([userId, organizationId, scope, restaurantId, branchId], name: "unique_membership_scope")
+  @@map("membership")
+}
+
+model Role {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  name           String
+  description    String?
+  isSystemRole   Boolean @default(false)
+  isDefault      Boolean @default(false)
+  status         String  @default("ACTIVE") // ACTIVE, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  RolePermission[]
+  memberships  MembershipRole[]
+
+  @@unique([organizationId, name])
+  @@map("role")
+}
+
+model Permission {
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key                String  @unique
+  domain             String
+  resource           String
+  action             String
+  description        String?
+  isSystemPermission Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles RolePermission[]
+
+  @@map("permission")
+}
+
+model RolePermission {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permission")
+}
+
+model MembershipRole {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId String @db.Uuid
+  roleId       String @db.Uuid
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, roleId])
+  @@map("membership_role")
+}
+
+// ==========================================
+// Restaurant Domain
+// ==========================================
+
+model Organization {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  legalName       String
+  tradeName       String?
+  slug            String  @unique
+  countryCode     String
+  defaultCurrency String  @default("INR")
+  defaultTimezone String  @default("Asia/Kolkata")
+  status          String  @default("ACTIVE") // TRIAL, ACTIVE, PAST_DUE, SUSPENDED, CLOSED
+  planCode        String?
+  billingEmail    String?
+  metadata        Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  version   Int       @default(1)
+
+  restaurants          Restaurant[]
+  branches             Branch[]
+  memberships          Membership[]
+  roles                Role[]
+  departments          Department[]
+  diningTables         DiningTable[]
+  branchSettings       BranchSettings[]
+  employees            Employee[]
+  auditLogs            AuditLog[]
+  outboxEvents         DomainEventOutbox[]
+  orders               Order[]
+  kitchenTickets       KitchenTicket[]
+  notificationMessages NotificationMessage[]
+  payments             Payment[]
+  invoices             Invoice[]
+  integrationConfigs   IntegrationProviderConfig[]
+  webhookEvents        WebhookEvent[]
+  externalReferences   ExternalReference[]
+
+  drivers                Driver[]
+  deliveryPartnerConfigs DeliveryPartnerConfig[]
+  deliveryAssignments    DeliveryAssignment[]
+  deliveryEvents         DeliveryEvent[]
+
+  menus              Menu[]
+  menuCategories     MenuCategory[]
+  menuItems          MenuItem[]
+  menuItemPlacements MenuItemPlacement[]
+  modifierGroups     ModifierGroup[]
+  modifierOptions    ModifierOption[]
+  priceRules         PriceRule[]
+  itemAvailabilities ItemAvailability[]
+  taxCategories      TaxCategory[]
+  ingredients        Ingredient[]
+  stockLots          StockLot[]
+  stockMovements     StockMovement[]
+  suppliers          Supplier[]
+  purchaseOrders     PurchaseOrder[]
+  purchaseOrderLines PurchaseOrderLine[]
+  wasteEntries       WasteEntry[]
+  recipeLines        RecipeLine[]
+  inventoryAlerts    InventoryAlert[]
+  customers          Customer[]
+  kpiSnapshots       KpiSnapshot[]
+  dailySummaries     DailyBusinessSummary[]
+  aiInsights         AIInsight[]
+
+  @@map("organization")
+}
+
+model Restaurant {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String   @db.Uuid
+  name                String
+  slug                String
+  brandLogoUrl        String?
+  cuisineTypes        String[]
+  description         String?
+  status              String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, ARCHIVED
+  primaryContactName  String?
+  primaryContactPhone String?
+  primaryContactEmail String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  version   Int       @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branches     Branch[]
+  memberships  Membership[]
+  employees    Employee[]
+  orders       Order[]
+
+  menus          Menu[]
+  menuItems      MenuItem[]
+  modifierGroups ModifierGroup[]
+  priceRules     PriceRule[]
+  kpiSnapshots   KpiSnapshot[]
+  dailySummaries DailyBusinessSummary[]
+  aiInsights     AIInsight[]
+
+  @@unique([organizationId, slug])
+  @@map("restaurant")
+}
+
+model Branch {
+  id                       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId           String  @db.Uuid
+  restaurantId             String  @db.Uuid
+  name                     String
+  branchCode               String
+  branchType               String // DINE_IN, CLOUD_KITCHEN, TAKEAWAY, CATERING, HYBRID
+  status                   String  @default("SETUP") // SETUP, ACTIVE, TEMPORARILY_CLOSED, PERMANENTLY_CLOSED
+  phone                    String?
+  email                    String?
+  addressLine1             String?
+  addressLine2             String?
+  city                     String?
+  state                    String?
+  postalCode               String?
+  countryCode              String?
+  latitude                 Float?
+  longitude                Float?
+  timezone                 String  @default("Asia/Kolkata")
+  serviceDayCutoverMinutes Int     @default(0) // minutes past midnight (e.g. 120 = 2 AM)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  version   Int       @default(1)
+
+  organization       Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant         Restaurant                  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  memberships        Membership[]
+  departments        Department[]
+  diningTables       DiningTable[]
+  settings           BranchSettings?
+  employees          Employee[]
+  orders             Order[]
+  kitchenTickets     KitchenTicket[]
+  payments           Payment[]
+  invoices           Invoice[]
+  integrationConfigs IntegrationProviderConfig[]
+
+  drivers                Driver[]
+  deliveryPartnerConfigs DeliveryPartnerConfig[]
+  deliveryAssignments    DeliveryAssignment[]
+
+  menus              Menu[]
+  menuItems          MenuItem[]
+  priceRules         PriceRule[]
+  itemAvailabilities ItemAvailability[]
+  stockLots          StockLot[]
+  stockMovements     StockMovement[]
+  purchaseOrderLines PurchaseOrderLine[]
+  wasteEntries       WasteEntry[]
+  inventoryAlerts    InventoryAlert[]
+  kpiSnapshots       KpiSnapshot[]
+  dailySummaries     DailyBusinessSummary[]
+  purchaseOrders     PurchaseOrder[]
+  aiInsights         AIInsight[]
+
+  @@unique([restaurantId, branchCode])
+  @@map("branch")
+}
+
+model Department {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String @db.Uuid
+  branchId       String @db.Uuid
+  name           String
+  departmentType String // KITCHEN, SERVICE, CASHIER, DELIVERY, MANAGEMENT, OTHER
+  status         String @default("ACTIVE") // ACTIVE, INACTIVE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, name])
+  @@map("department")
+}
+
+model DiningTable {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  branchId       String  @db.Uuid
+  label          String
+  section        String?
+  capacity       Int
+  qrCode         String? @unique
+  status         String  @default("AVAILABLE") // AVAILABLE, OCCUPIED, RESERVED, BLOCKED, INACTIVE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  orders       Order[]
+
+  @@unique([branchId, label])
+  @@map("dining_table")
+}
+
+model BranchSettings {
+  id                        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId            String  @db.Uuid
+  branchId                  String  @unique @db.Uuid
+  acceptsDineIn             Boolean @default(false)
+  acceptsTakeaway           Boolean @default(false)
+  acceptsDelivery           Boolean @default(false)
+  autoAcceptOrders          Boolean @default(false)
+  printKitchenTickets       Boolean @default(false)
+  taxInclusivePricing       Boolean @default(false)
+  defaultPreparationMinutes Int     @default(15)
+  lowStockThresholdMode     String  @default("GLOBAL") // GLOBAL, PER_ITEM
+  settingsJson              Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("branch_settings")
+}
+
+// ==========================================
+// Staff Domain
+// ==========================================
+
+model Employee {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  restaurantId   String?   @db.Uuid
+  branchId       String?   @db.Uuid
+  userId         String?   @db.Uuid
+  employeeCode   String
+  fullName       String
+  phone          String?
+  email          String?
+  jobTitle       String
+  employmentType String    @default("FULL_TIME") // FULL_TIME, PART_TIME, CONTRACT, TEMPORARY
+  status         String    @default("ACTIVE") // ACTIVE, ON_LEAVE, SUSPENDED, EXITED
+  joinedAt       DateTime?
+  exitedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  drivers      Driver[]
+
+  @@unique([organizationId, employeeCode])
+  @@map("employee")
+}
+
+// ==========================================
+// Platform Sync & Audit Domain
+// ==========================================
+
+model DomainEventOutbox {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  eventName      String
+  aggregateType  String
+  aggregateId    String    @db.Uuid
+  payloadJson    Json
+  metadataJson   Json?
+  status         String    @default("PENDING") // PENDING, PUBLISHED, FAILED, DEAD_LETTER
+  occurredAt     DateTime  @default(now())
+  publishedAt    DateTime?
+  attemptCount   Int       @default(0)
+  lastError      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("domain_event_outbox")
+}
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  actorUserId    String?  @db.Uuid
+  actorType      String // USER, SYSTEM, PROVIDER, AI
+  action         String
+  entityType     String
+  entityId       String   @db.Uuid
+  beforeJson     Json?
+  afterJson      Json?
+  ipAddress      String?
+  userAgent      String?
+  occurredAt     DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("audit_log")
+}
+
+// ==========================================
+// Menu Domain
+// ==========================================
+
+model Menu {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  restaurantId   String    @db.Uuid
+  branchId       String?   @db.Uuid
+  name           String
+  menuType       String // DINE_IN, TAKEAWAY, DELIVERY, CATERING, ALL_DAY, CUSTOM
+  status         String    @default("DRAFT") // DRAFT, ACTIVE, SCHEDULED, ARCHIVED
+  startsAt       DateTime?
+  endsAt         DateTime?
+  sortOrder      Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch       Branch?             @relation(fields: [branchId], references: [id])
+  categories   MenuCategory[]
+  placements   MenuItemPlacement[]
+
+  @@map("menu")
+}
+
+model MenuCategory {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  menuId         String  @db.Uuid
+  name           String
+  description    String?
+  imageUrl       String?
+  sortOrder      Int     @default(0)
+  status         String  @default("ACTIVE") // ACTIVE, HIDDEN, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menu         Menu                @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  placements   MenuItemPlacement[]
+
+  @@unique([menuId, name])
+  @@map("menu_category")
+}
+
+model MenuItem {
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String  @db.Uuid
+  restaurantId       String  @db.Uuid
+  branchId           String? @db.Uuid
+  sku                String?
+  name               String
+  description        String?
+  itemType           String // FOOD, BEVERAGE, PACKAGING, SERVICE, COMBO
+  dietaryType        String? // VEG, NON_VEG, EGG, VEGAN, JAIN, OTHER
+  basePriceMinor     Int
+  currency           String  @default("INR")
+  taxCategoryId      String? @db.Uuid
+  imageUrl           String?
+  preparationMinutes Int?
+  isRecommended      Boolean @default(false)
+  isStockTracked     Boolean @default(false)
+  status             String  @default("DRAFT") // DRAFT, ACTIVE, UNAVAILABLE, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant     Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch         Branch?             @relation(fields: [branchId], references: [id])
+  taxCategory    TaxCategory?        @relation(fields: [taxCategoryId], references: [id])
+  placements     MenuItemPlacement[]
+  modifierGroups ModifierGroup[]
+  priceRules     PriceRule[]
+  availability   ItemAvailability[]
+  orderItems     OrderItem[]
+  recipeLines    RecipeLine[]
+
+  @@map("menu_item")
+}
+
+model MenuItemPlacement {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @db.Uuid
+  menuId          String   @db.Uuid
+  categoryId      String   @db.Uuid
+  menuItemId      String   @db.Uuid
+  sortOrder       Int      @default(0)
+  visibleChannels String[]
+  status          String   @default("ACTIVE") // ACTIVE, HIDDEN
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menu         Menu         @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  category     MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, menuItemId])
+  @@map("menu_item_placement")
+}
+
+model ModifierGroup {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  restaurantId   String  @db.Uuid
+  menuItemId     String? @db.Uuid
+  name           String
+  selectionType  String // SINGLE, MULTIPLE
+  minSelections  Int     @default(0)
+  maxSelections  Int     @default(1)
+  isRequired     Boolean @default(false)
+  sortOrder      Int     @default(0)
+  status         String  @default("ACTIVE") // ACTIVE, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem?        @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  options      ModifierOption[]
+
+  @@map("modifier_group")
+}
+
+model ModifierOption {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String  @db.Uuid
+  modifierGroupId String  @db.Uuid
+  name            String
+  priceDeltaMinor Int     @default(0)
+  currency        String  @default("INR")
+  isDefault       Boolean @default(false)
+  sortOrder       Int     @default(0)
+  status          String  @default("ACTIVE") // ACTIVE, UNAVAILABLE, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([modifierGroupId, name])
+  @@map("modifier_option")
+}
+
+model PriceRule {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  restaurantId   String    @db.Uuid
+  branchId       String?   @db.Uuid
+  menuItemId     String    @db.Uuid
+  channel        String    @default("ALL") // DINE_IN, TAKEAWAY, DELIVERY, MARKETPLACE, ALL
+  priceMinor     Int
+  currency       String    @default("INR")
+  startsAt       DateTime?
+  endsAt         DateTime?
+  priority       Int       @default(0)
+  status         String    @default("ACTIVE") // ACTIVE, INACTIVE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@map("price_rule")
+}
+
+model ItemAvailability {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  menuItemId     String  @db.Uuid
+  branchId       String? @db.Uuid
+  channel        String  @default("ALL")
+  dayOfWeek      Int? // 0-6
+  startTimeLocal String? // "09:00"
+  endTimeLocal   String? // "22:00"
+  manualOverride String  @default("NONE") // AVAILABLE, UNAVAILABLE, NONE
+  reason         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("item_availability")
+}
+
+// ==========================================
+// Finance Domain
+// ==========================================
+
+model TaxCategory {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  name           String
+  countryCode    String
+  taxType        String // GST, VAT, SALES_TAX, SERVICE_TAX, OTHER
+  ratePercent    Float
+  isInclusive    Boolean @default(false)
+  status         String  @default("ACTIVE") // ACTIVE, INACTIVE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+
+  @@map("tax_category")
+}
+
+// ==========================================
+// Orders, Kitchen, and POS Domain
+// ==========================================
+
+model Order {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String    @db.Uuid
+  restaurantId       String    @db.Uuid
+  branchId           String    @db.Uuid
+  orderNumber        String
+  channel            String // DINE_IN, TAKEAWAY, DELIVERY, POS, MARKETPLACE
+  source             String // STAFF_POS, QR, PHONE, WEB, WHATSAPP, MARKETPLACE, API
+  customerId         String?   @db.Uuid
+  tableId            String?   @db.Uuid
+  status             String    @default("DRAFT") // DRAFT, PLACED, ACCEPTED, IN_KITCHEN, READY, SERVED, OUT_FOR_DELIVERY, COMPLETED, CANCELLED, REFUNDED
+  paymentStatus      String    @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, REFUNDED, FAILED
+  fulfillmentStatus  String    @default("NOT_STARTED") // NOT_STARTED, PREPARING, READY, FULFILLED, FAILED
+  subtotalMinor      Int       @default(0)
+  discountMinor      Int       @default(0)
+  taxMinor           Int       @default(0)
+  serviceChargeMinor Int       @default(0)
+  deliveryFeeMinor   Int       @default(0)
+  totalMinor         Int       @default(0)
+  currency           String    @default("INR")
+  notes              String?
+  placedAt           DateTime?
+  acceptedAt         DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancelReason       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant          Restaurant           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch              Branch               @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  table               DiningTable?         @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  customer            Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items               OrderItem[]
+  kitchenTickets      KitchenTicket[]
+  payments            Payment[]
+  invoice             Invoice?
+  reviews             Review[]
+  deliveryAssignments DeliveryAssignment[]
+
+  @@unique([branchId, orderNumber])
+  @@map("order")
+}
+
+model OrderItem {
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String  @db.Uuid
+  orderId             String  @db.Uuid
+  menuItemId          String  @db.Uuid
+  nameSnapshot        String
+  quantity            Int
+  unitPriceMinor      Int
+  discountMinor       Int     @default(0)
+  taxMinor            Int     @default(0)
+  lineTotalMinor      Int
+  currency            String  @default("INR")
+  specialInstructions String?
+  status              String  @default("PENDING") // PENDING, ACCEPTED, PREPARING, READY, SERVED, CANCELLED, VOIDED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order              Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem           MenuItem            @relation(fields: [menuItemId], references: [id])
+  kitchenTicketItems KitchenTicketItem[]
+
+  @@map("order_item")
+}
+
+model KitchenTicket {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  branchId       String    @db.Uuid
+  orderId        String    @db.Uuid
+  ticketNumber   String
+  station        String
+  priority       String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status         String    @default("QUEUED") // QUEUED, ACCEPTED, PREPARING, READY, SERVED, CANCELLED
+  printedAt      DateTime?
+  acceptedAt     DateTime?
+  readyAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  order        Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  items        KitchenTicketItem[]
+
+  @@unique([branchId, ticketNumber])
+  @@map("kitchen_ticket")
+}
+
+model KitchenTicketItem {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String @db.Uuid
+  kitchenTicketId String @db.Uuid
+  orderItemId     String @db.Uuid
+  nameSnapshot    String
+  quantity        Int
+  station         String
+  status          String @default("QUEUED") // QUEUED, PREPARING, READY, CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kitchenTicket KitchenTicket @relation(fields: [kitchenTicketId], references: [id], onDelete: Cascade)
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("kitchen_ticket_item")
+}
+
+// ==========================================
+// Marketing and Notifications Domain
+// ==========================================
+
+model NotificationMessage {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String    @db.Uuid
+  templateId        String?   @db.Uuid
+  recipientType     String // CUSTOMER, USER, EMPLOYEE, EXTERNAL
+  recipientId       String?   @db.Uuid
+  recipientAddress  String
+  channel           String // WHATSAPP, SMS, EMAIL, IN_APP
+  status            String    @default("QUEUED") // QUEUED, SENT, DELIVERED, FAILED, CANCELLED
+  provider          String?
+  providerMessageId String?
+  payload           Json?
+  failureReason     String?
+  queuedAt          DateTime?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("notification_message")
+}
+
+// ==========================================
+// Inventory Domain
+// ==========================================
+
+model Ingredient {
+  id                    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String  @db.Uuid
+  restaurantId          String? @db.Uuid
+  name                  String
+  sku                   String?
+  category              String?
+  unitOfMeasure         String
+  purchaseUnitOfMeasure String
+  conversionFactor      Float
+  preferredSupplierId   String? @db.Uuid
+  lowStockThreshold     Float   @default(0)
+  parLevel              Float   @default(0)
+  isPerishable          Boolean @default(false)
+  shelfLifeDays         Int?
+  status                String  @default("ACTIVE") // ACTIVE, INACTIVE, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  preferredSupplier  Supplier?           @relation(fields: [preferredSupplierId], references: [id], onDelete: SetNull)
+  stockLots          StockLot[]
+  stockMovements     StockMovement[]
+  recipeLines        RecipeLine[]
+  purchaseOrderLines PurchaseOrderLine[]
+  wasteEntries       WasteEntry[]
+  inventoryAlerts    InventoryAlert[]
+
+  @@map("ingredient")
+}
+
+model StockLot {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  branchId       String    @db.Uuid
+  ingredientId   String    @db.Uuid
+  lotCode        String?
+  quantityOnHand Float
+  unitOfMeasure  String
+  unitCostMinor  Int
+  currency       String    @default("INR")
+  receivedAt     DateTime  @default(now())
+  expiresAt      DateTime?
+  status         String    @default("AVAILABLE") // AVAILABLE, RESERVED, DEPLETED, EXPIRED, WASTED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch          @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient      @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  movements    StockMovement[]
+  wasteEntries WasteEntry[]
+
+  @@map("stock_lot")
+}
+
+model StockMovement {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  branchId       String  @db.Uuid
+  ingredientId   String  @db.Uuid
+  stockLotId     String? @db.Uuid
+  movementType   String // OPENING, PURCHASE_RECEIPT, ORDER_CONSUMPTION, ADJUSTMENT, TRANSFER_IN, TRANSFER_OUT, WASTE, EXPIRY
+  quantityDelta  Float
+  unitOfMeasure  String
+  unitCostMinor  Int
+  currency       String  @default("INR")
+  referenceType  String?
+  referenceId    String? @db.Uuid
+  reason         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  stockLot     StockLot?    @relation(fields: [stockLotId], references: [id], onDelete: SetNull)
+
+  @@map("stock_movement")
+}
+
+model Supplier {
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String  @db.Uuid
+  name             String
+  contactName      String?
+  phone            String?
+  email            String?
+  gstin            String?
+  address          String?
+  paymentTermsDays Int?
+  status           String  @default("ACTIVE") // ACTIVE, INACTIVE, BLACKLISTED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ingredients    Ingredient[]
+  purchaseOrders PurchaseOrder[]
+
+  @@map("supplier")
+}
+
+model PurchaseOrder {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  branchId       String    @db.Uuid
+  supplierId     String    @db.Uuid
+  poNumber       String
+  status         String    @default("DRAFT") // DRAFT, SENT, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  orderedAt      DateTime?
+  expectedAt     DateTime?
+  subtotalMinor  Int       @default(0)
+  taxMinor       Int       @default(0)
+  totalMinor     Int       @default(0)
+  currency       String    @default("INR")
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  supplier     Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  lines        PurchaseOrderLine[]
+
+  @@unique([organizationId, poNumber])
+  @@map("purchase_order")
+}
+
+model PurchaseOrderLine {
+  id               String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String @db.Uuid
+  purchaseOrderId  String @db.Uuid
+  ingredientId     String @db.Uuid
+  orderedQuantity  Float
+  receivedQuantity Float  @default(0)
+  unitOfMeasure    String
+  unitCostMinor    Int
+  taxMinor         Int    @default(0)
+  lineTotalMinor   Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient    @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  branch        Branch?       @relation(fields: [branchId], references: [id])
+  branchId      String?       @db.Uuid
+
+  @@map("purchase_order_line")
+}
+
+model WasteEntry {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String   @db.Uuid
+  branchId             String   @db.Uuid
+  ingredientId         String   @db.Uuid
+  stockLotId           String?  @db.Uuid
+  quantity             Float
+  unitOfMeasure        String
+  reason               String // EXPIRED, SPOILED, PREP_LOSS, ORDER_MISTAKE, DAMAGED, OTHER
+  notes                String?
+  recordedByEmployeeId String?  @db.Uuid
+  recordedAt           DateTime @default(now())
+  approvedByUserId     String?  @db.Uuid
+  status               String   @default("RECORDED") // RECORDED, APPROVED, REJECTED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  stockLot     StockLot?    @relation(fields: [stockLotId], references: [id], onDelete: SetNull)
+
+  @@map("waste_entry")
+}
+
+model RecipeLine {
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String  @db.Uuid
+  menuItemId         String  @db.Uuid
+  ingredientId       String  @db.Uuid
+  quantity           Float
+  unitOfMeasure      String
+  wasteFactorPercent Float   @default(0)
+  isOptional         Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_line")
+}
+
+model InventoryAlert {
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String  @db.Uuid
+  branchId            String  @db.Uuid
+  ingredientId        String  @db.Uuid
+  alertType           String // LOW_STOCK, OUT_OF_STOCK, EXPIRING_SOON, ABNORMAL_USAGE, PURCHASE_RECOMMENDED
+  severity            String // LOW, MEDIUM, HIGH, CRITICAL
+  message             String
+  recommendedQuantity Float?
+  unitOfMeasure       String?
+  source              String // RULE, AI
+  status              String  @default("OPEN") // OPEN, ACKNOWLEDGED, RESOLVED, DISMISSED
+
+  // AI Enrichments
+  predictedStockoutDate DateTime?
+  predictedDaysRemaining Float?
+  aiRecommendation       String?
+  aiConfidenceScore      Float?
+  aiModelProvider        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@map("inventory_alert")
+}
+
+// ==========================================
+// Payments Domain
+// ==========================================
+
+model Payment {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String    @db.Uuid
+  branchId          String    @db.Uuid
+  orderId           String    @db.Uuid
+  paymentNumber     String
+  provider          String // CASH, RAZORPAY, CASHFREE, STRIPE, PHONEPE, OTHER
+  method            String // CASH, CARD, UPI, WALLET, BANK_TRANSFER, ONLINE
+  status            String    @default("PENDING") // PENDING, AUTHORIZED, CAPTURED, FAILED, CANCELLED, REFUNDED, PARTIALLY_REFUNDED
+  amountMinor       Int
+  currency          String    @default("INR")
+  providerPaymentId String?
+  providerOrderId   String?
+  failureCode       String?
+  failureMessage    String?
+  paidAt            DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payment")
+}
+
+model Invoice {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  branchId       String    @db.Uuid
+  orderId        String    @unique @db.Uuid
+  invoiceNumber  String
+  status         String    @default("DRAFT") // DRAFT, ISSUED, VOIDED, CREDITED
+  customerName   String?
+  customerGstin  String?
+  billingAddress String?
+  subtotalMinor  Int       @default(0)
+  discountMinor  Int       @default(0)
+  taxMinor       Int       @default(0)
+  totalMinor     Int       @default(0)
+  currency       String    @default("INR")
+  issuedAt       DateTime?
+  voidedAt       DateTime?
+  pdfUrl         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, invoiceNumber])
+  @@map("invoice")
+}
+
+// ==========================================
+// Integrations Domain
+// ==========================================
+
+model IntegrationProviderConfig {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String    @db.Uuid
+  branchId          String?   @db.Uuid
+  providerType      String // PAYMENT, DELIVERY, MARKETPLACE, WHATSAPP, SMS, EMAIL, MAPS, AI, STORAGE
+  providerKey       String
+  displayName       String
+  status            String    @default("DRAFT") // DRAFT, ACTIVE, DISABLED, ERROR
+  credentialsRef    String?
+  configJson        Json?
+  webhookSecretRef  String?
+  lastHealthCheckAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch        Branch?        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  webhookEvents WebhookEvent[]
+
+  @@map("integration_provider_config")
+}
+
+model WebhookEvent {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String    @db.Uuid
+  providerConfigId String    @db.Uuid
+  providerType     String
+  providerKey      String
+  eventKey         String
+  externalEventId  String?
+  status           String    @default("RECEIVED") // RECEIVED, VERIFIED, PROCESSING, PROCESSED, FAILED, IGNORED
+  headersJson      Json?
+  payloadJson      Json?
+  receivedAt       DateTime  @default(now())
+  processedAt      DateTime?
+  failureReason    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  providerConfig IntegrationProviderConfig @relation(fields: [providerConfigId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_event")
+}
+
+model ExternalReference {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @db.Uuid
+  providerType   String
+  providerKey    String
+  entityType     String
+  entityId       String  @db.Uuid
+  externalId     String
+  externalUrl    String?
+  metadata       Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([providerKey, entityType, entityId, externalId])
+  @@map("external_reference")
+}
+
+// ==========================================
+// CRM Domain
+// ==========================================
+
+model Customer {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String    @db.Uuid
+  restaurantId       String?   @db.Uuid
+  fullName           String
+  phone              String?
+  email              String?
+  dateOfBirth        DateTime?
+  anniversaryDate    DateTime?
+  tags               String[]
+  marketingOptIn     Boolean   @default(false)
+  whatsappOptIn      Boolean   @default(false)
+  emailOptIn         Boolean   @default(false)
+  smsOptIn           Boolean   @default(false)
+  lifetimeSpendMinor Int       @default(0)
+  orderCount         Int       @default(0)
+  lastOrderAt        DateTime?
+  status             String    @default("ACTIVE") // ACTIVE, BLOCKED, MERGED, DELETED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders             Order[]
+  addresses          CustomerAddress[]
+  reviews            Review[]
+  walletTransactions WalletTransaction[]
+
+  @@map("customer")
+}
+
+model CustomerAddress {
+  id                   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String  @db.Uuid
+  customerId           String  @db.Uuid
+  label                String?
+  addressLine1         String
+  addressLine2         String?
+  city                 String
+  state                String?
+  postalCode           String
+  countryCode          String
+  latitude             Float?
+  longitude            Float?
+  deliveryInstructions String?
+  isDefault            Boolean @default(false)
+  status               String  @default("ACTIVE") // ACTIVE, ARCHIVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  customer            Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deliveryAssignments DeliveryAssignment[]
+
+  @@map("customer_address")
+}
+
+model Review {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  restaurantId   String?  @db.Uuid
+  branchId       String?  @db.Uuid
+  customerId     String   @db.Uuid
+  orderId        String?  @db.Uuid
+  rating         Int
+  comment        String?
+  reviewSource   String   @default("IN_APP") // IN_APP, GOOGLE, ZOMATO, SWIGGY, MANUAL
+  status         String   @default("PENDING") // PENDING, PUBLISHED, HIDDEN, FLAGGED
+  submittedAt    DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@map("review")
+}
+
+model WalletTransaction {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String  @db.Uuid
+  customerId        String  @db.Uuid
+  transactionType   String // CREDIT, DEBIT, REFUND, ADJUSTMENT, EXPIRY
+  amountMinor       Int
+  currency          String  @default("INR")
+  balanceAfterMinor Int
+  referenceType     String?
+  referenceId       String? @db.Uuid
+  reason            String?
+
+  createdAt DateTime @default(now())
+  version   Int      @default(1)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_transaction")
+}
+
+// ==========================================
+// Delivery Domain
+// ==========================================
+
+model Driver {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @db.Uuid
+  branchId       String    @db.Uuid
+  employeeId     String?   @db.Uuid
+  name           String
+  phone          String
+  email          String?
+  licenseNumber  String?
+  vehicleType    String    @default("BIKE") // BIKE, SCOOTER, CAR, CYCLE, FOOT, OTHER
+  vehicleNumber  String?
+  status         String    @default("INACTIVE") // AVAILABLE, ASSIGNED, ON_BREAK, INACTIVE
+  kycStatus      String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  latitude       Float?
+  longitude      Float?
+  lastLocationAt DateTime?
+  documentsJson  Json?     // { drivingLicenseUrl, rcUrl, idProofUrl }
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  version   Int       @default(1)
+
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch              Branch               @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  employee            Employee?            @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  deliveryAssignments DeliveryAssignment[]
+
+  @@index([organizationId, branchId, status])
+  @@map("driver")
+}
+
+model DeliveryPartnerConfig {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  branchId       String   @db.Uuid
+  provider       String   // LOCAL_FLEET, PORTER, BORZO, SHADOWFAX, OTHER
+  isEnabled      Boolean  @default(false)
+  apiKey         String?
+  apiSecret      String?
+  merchantId     String?
+  webhookSecret  String?
+  autoDispatch   Boolean  @default(false)
+  priorityOrder  Int      @default(1)
+  maxDistanceKm  Float?   @default(15.0)
+  settingsJson   Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch       Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, provider])
+  @@map("delivery_partner_config")
+}
+
+model DeliveryAssignment {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String    @db.Uuid
+  branchId          String    @db.Uuid
+  orderId           String    @db.Uuid
+  customerAddressId String?   @db.Uuid
+  provider          String    @default("LOCAL_FLEET") // LOCAL_FLEET, PORTER, BORZO, SHADOWFAX, OTHER
+  driverId          String?   @db.Uuid
+  providerTaskId    String?
+  status            String    @default("PENDING") // PENDING, ASSIGNED, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED, FAILED, CANCELLED
+  pickupEta         DateTime?
+  deliveryEta       DateTime?
+  deliveredAt       DateTime?
+  failureReason     String?
+  trackingUrl       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch          Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerAddress CustomerAddress? @relation(fields: [customerAddressId], references: [id], onDelete: SetNull)
+  driver          Driver?          @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  events          DeliveryEvent[]
+
+  @@map("delivery_assignment")
+}
+
+model DeliveryEvent {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String   @db.Uuid
+  deliveryAssignmentId String   @db.Uuid
+  eventType            String
+  eventSource          String   @default("LOCAL") // LOCAL, PROVIDER_WEBHOOK, STAFF
+  message              String?
+  latitude             Float?
+  longitude            Float?
+  occurredAt           DateTime @default(now())
+  rawPayload           Json?
+
+  createdAt DateTime @default(now())
+
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveryAssignment DeliveryAssignment @relation(fields: [deliveryAssignmentId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_event")
+}
+
+// ==========================================
+// Analytics Domain
+// ==========================================
+
+model KpiSnapshot {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  restaurantId   String?  @db.Uuid
+  branchId       String?  @db.Uuid
+  metricKey      String
+  domain         String
+  periodType     String // HOURLY, DAILY, WEEKLY, MONTHLY
+  periodStart    DateTime
+  periodEnd      DateTime
+  valueNumeric   Float?
+  valueJson      Json?
+  computedAt     DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, metricKey, periodType])
+  @@index([branchId, metricKey, periodType, periodStart])
+  @@map("kpi_snapshot")
+}
+
+model DailyBusinessSummary {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId         String   @db.Uuid
+  restaurantId           String?  @db.Uuid
+  branchId               String?  @db.Uuid
+  businessDate           DateTime @db.Date
+  summaryText            String
+  salesTotalMinor        Int
+  orderCount             Int
+  topItemsJson           Json?
+  lowStockItemsJson      Json?
+  customerHighlightsJson Json?
+  riskFlagsJson          Json?
+  generatedBy            String // SYSTEM, AI
+  generatedAt            DateTime @default(now())
+
+  // AI Enrichments
+  aiNarrativeText        String?
+  anomaliesJson          Json?
+  aiModelProvider        String?
+  aiModelName            String?
+  aiGeneratedAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, businessDate])
+  @@index([organizationId, businessDate])
+  @@map("daily_business_summary")
+}
+
+// ==========================================
+// AI Domain
+// ==========================================
+
+model AIInsight {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String    @db.Uuid
+  restaurantId      String?   @db.Uuid
+  branchId          String?   @db.Uuid
+  insightType       String    // SALES, INVENTORY, KITCHEN, CUSTOMER, MARKETING, FINANCE, SUPPORT
+  severity          String    // INFO, LOW, MEDIUM, HIGH, CRITICAL
+  title             String
+  body              String
+  recommendation    String?
+  sourceEntityType  String?
+  sourceEntityId    String?
+  sourcePeriodStart DateTime?
+  sourcePeriodEnd   DateTime?
+  modelProvider     String    @default("SYSTEM")
+  modelName         String?
+  confidenceScore   Float?
+  status            String    @default("NEW") // NEW, ACKNOWLEDGED, ACTIONED, DISMISSED, EXPIRED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([branchId, insightType, status])
+  @@map("ai_insight")
+}
+
+
+

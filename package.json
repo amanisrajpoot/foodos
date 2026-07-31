@@ -1,0 +1,20 @@
+{
+  "name": "foodos",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "api": "npm run start:dev -w apps/api",
+    "client": "npm run start -w apps/client",
+    "build:api": "npm run build -w apps/api",
+    "db:push": "npm run prisma db push -w apps/api",
+    "db:studio": "npm run prisma studio -w apps/api"
+  },
+  "dependencies": {
+    "@nestjs/platform-express": "^11.1.28",
+    "express": "^5.2.1"
+  }
+}
