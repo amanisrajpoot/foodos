@@ -1,8 +1,10 @@
+// @ts-ignore
 import '../global.css';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { Stack as ExpoStack, useRouter, useSegments } from 'expo-router';
 import { useAuthStore } from '../stores/auth.store';
+import { ToastOverlay } from '../components/ui/ToastOverlay';
 
 // Inject Web CSS Stylesheet Fallback
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -77,18 +79,39 @@ export default function RootLayout() {
     if (!isReady) return;
     const inAuthGroup = segments[0] === '(auth)';
 
-    if (!isAuthenticated && !inAuthGroup && segments[0] !== undefined && segments[0] !== 'index') {
+    if (!isAuthenticated && !inAuthGroup) {
+      // Force unauthenticated users to login
       router.replace('/(auth)/login');
     } else if (isAuthenticated) {
       if (!organizationId && segments[0] !== '(onboarding)') {
+        // Force new users to onboarding
         router.replace('/(onboarding)/create-org');
-      } else if (organizationId && inAuthGroup) {
-        if (role === 'OWNER') {
-          router.replace('/(owner)');
+      } else if (organizationId && (inAuthGroup || segments[0] === 'index' || segments[0] === undefined)) {
+        // Authenticated users at root or auth pages go to their specific dashboard
+        switch (role) {
+          case 'OWNER':
+            router.replace('/(owner)');
+            break;
+          case 'STAFF':
+            router.replace('/(staff)');
+            break;
+          case 'DRIVER':
+            router.replace('/(delivery)');
+            break;
+          case 'KITCHEN':
+            router.replace('/(kitchen)');
+            break;
+          default:
+            router.replace('/(auth)/login');
         }
       }
     }
   }, [isReady, isAuthenticated, organizationId, role, segments]);
 
-  return <ExpoStack screenOptions={{ headerShown: false }} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <ExpoStack screenOptions={{ headerShown: false }} />
+      <ToastOverlay />
+    </View>
+  );
 }

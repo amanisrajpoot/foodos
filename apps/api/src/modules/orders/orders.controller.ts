@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Patch, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 
 // Basic DTOs
@@ -23,6 +23,16 @@ export class OrdersController {
   @Post()
   async createOrder(@Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(dto);
+  }
+
+  @Get()
+  async getOrders(@Query('branchId') branchId: string) {
+    return this.ordersService.getOrders(branchId);
+  }
+
+  @Get(':id')
+  async getOrderById(@Param('id') id: string) {
+    return this.ordersService.getOrderById(id);
   }
 
   @Patch(':id/confirm')

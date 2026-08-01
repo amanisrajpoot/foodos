@@ -325,6 +325,19 @@ export class DeliveryService {
     });
   }
 
+  async getDeliveryAssignment(assignmentId: string) {
+    const assignment = await this.prisma.deliveryAssignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        order: { include: { items: true, customer: true, table: true } },
+        customerAddress: true,
+        branch: true,
+      },
+    });
+    if (!assignment) throw new NotFoundException('Assignment not found');
+    return assignment;
+  }
+
   async getDriverAssignments(driverId: string) {
     return this.prisma.deliveryAssignment.findMany({
       where: {

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Patch, Query } from '@nestjs/common';
 import { KitchenService } from './kitchen.service';
 
 export class UpdateTicketStatusDto {
@@ -8,6 +8,11 @@ export class UpdateTicketStatusDto {
 @Controller('kitchen')
 export class KitchenController {
   constructor(private readonly kitchenService: KitchenService) {}
+
+  @Get('tickets')
+  async getActiveTickets(@Query('branchId') branchId: string) {
+    return this.kitchenService.getActiveTickets(branchId);
+  }
 
   @Patch('tickets/:id/status')
   async updateTicketStatus(

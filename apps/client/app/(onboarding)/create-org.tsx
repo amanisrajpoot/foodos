@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { useAuthStore } from '../../stores/auth.store';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../../components/ui/Card';
+import { FormInput } from '../../components/ui/FormInput';
+import { validateRequired } from '../../utils/validation';
 
 export default function CreateOrgScreen() {
-  const setOrganization = useAuthStore((state) => state.setOrganization);
   const router = useRouter();
 
   const [legalName, setLegalName] = useState('');
@@ -16,10 +16,31 @@ export default function CreateOrgScreen() {
   const [timezone, setTimezone] = useState('Asia/Kolkata');
   const [taxId, setTaxId] = useState('');
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleNext = () => {
-    if (!legalName) return;
-    setOrganization('org_demo_101');
-    router.push('/(owner)');
+    // Validate
+    const newErrors: Record<string, string> = {};
+    const legalNameErr = validateRequired(legalName, 'Legal Entity Name');
+    if (legalNameErr) newErrors.legalName = legalNameErr;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+    router.push({
+      pathname: '/(onboarding)/create-restaurant',
+      params: {
+        legalName,
+        tradeName,
+        countryCode,
+        currency,
+        timezone,
+        taxId
+      }
+    });
   };
 
   return (
@@ -41,97 +62,76 @@ export default function CreateOrgScreen() {
         {/* Progress Bar */}
         <View className="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-6">
           <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-xs font-bold text-amber-400">STEP 1 OF 3</Text>
-            <Text className="text-xs text-slate-400 font-medium">33% Completed</Text>
+            <Text className="text-xs font-bold text-blue-400">STEP 1 OF 5</Text>
+            <Text className="text-xs text-slate-400 font-medium">20% Completed</Text>
           </View>
           <View className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-            <View className="w-1/3 h-full bg-amber-500 rounded-full" />
+            <View className="w-1/5 h-full bg-blue-500 rounded-full" />
           </View>
         </View>
 
         {/* Form Card */}
         <Card title="Legal Entity & Corporate Details">
-          <View className="gap-4">
-            <View>
-              <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Legal Entity Name *
-              </Text>
-              <TextInput
-                className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                placeholder="e.g. Royal Foods Private Limited"
-                placeholderTextColor="#64748b"
-                value={legalName}
-                onChangeText={setLegalName}
-              />
-            </View>
+          <View className="gap-2">
+            <FormInput
+              label="Legal Entity Name"
+              required
+              placeholder="e.g. Royal Foods Private Limited"
+              value={legalName}
+              onChangeText={(t) => { setLegalName(t); setErrors((e) => ({ ...e, legalName: '' })); }}
+              error={errors.legalName}
+              glowColor="blue"
+            />
 
-            <View>
-              <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Trade / Brand Name
-              </Text>
-              <TextInput
-                className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                placeholder="e.g. Royal Foods & Hospitality"
-                placeholderTextColor="#64748b"
-                value={tradeName}
-                onChangeText={setTradeName}
-              />
-            </View>
+            <FormInput
+              label="Trade / Brand Name"
+              placeholder="e.g. Royal Foods & Hospitality"
+              value={tradeName}
+              onChangeText={setTradeName}
+              glowColor="blue"
+            />
 
             <View className="flex-row gap-4">
               <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Country Code
-                </Text>
-                <TextInput
-                  className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
+                <FormInput
+                  label="Country Code"
                   placeholder="IN"
-                  placeholderTextColor="#64748b"
                   value={countryCode}
                   onChangeText={setCountryCode}
+                  glowColor="blue"
                 />
               </View>
-
               <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Default Currency
-                </Text>
-                <TextInput
-                  className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
+                <FormInput
+                  label="Default Currency"
                   placeholder="INR"
-                  placeholderTextColor="#64748b"
                   value={currency}
                   onChangeText={setCurrency}
+                  glowColor="blue"
                 />
               </View>
             </View>
 
-            <View>
-              <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Tax Identification (GSTIN / VAT ID)
-              </Text>
-              <TextInput
-                className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                placeholder="e.g. 27AAAAA0000A1Z5"
-                placeholderTextColor="#64748b"
-                value={taxId}
-                onChangeText={setTaxId}
-              />
-            </View>
+            <FormInput
+              label="Tax Identification (GSTIN / VAT ID)"
+              placeholder="e.g. 27AAAAA0000A1Z5"
+              value={taxId}
+              onChangeText={setTaxId}
+              glowColor="blue"
+            />
 
             <TouchableOpacity
               onPress={handleNext}
-              disabled={!legalName}
-              className={`p-4 rounded-xl items-center mt-4 shadow-lg ${
-                legalName ? 'bg-amber-500 shadow-amber-500/25' : 'bg-slate-800'
+              className={`p-4 rounded-xl items-center mt-2 shadow-lg ${
+                legalName ? 'bg-blue-600 shadow-blue-500/25' : 'bg-slate-800'
               }`}
             >
               <Text
                 className={`font-extrabold text-base ${
-                  legalName ? 'text-slate-950' : 'text-slate-500'
+                  legalName ? 'text-white' : 'text-slate-500'
                 }`}
               >
-                Complete Onboarding & Launch Dashboard →
+                Next: Restaurant Brand Identity →
               </Text>
             </TouchableOpacity>
           </View>

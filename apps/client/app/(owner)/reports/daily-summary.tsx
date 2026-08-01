@@ -2,9 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { api } from '../../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../../stores/auth.store';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { EmptyState } from '../../../components/ui/EmptyState';
 
 export default function DailySummaryReport() {
+  const organizationId = useAuthStore(state => state.organizationId);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [summary, setSummary] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -16,48 +21,34 @@ export default function DailySummaryReport() {
 
   async function fetchSummary() {
     setLoading(true);
+    setError(false);
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
+      if (!organizationId) throw new Error('No Organization ID');
       const res = await api.get(
-        `/analytics/reports/daily-summary?organizationId=${organizationId}&date=${selectedDate}${
+        `/v1/analytics/reports/daily-summary?organizationId=${organizationId}&date=${selectedDate}${
           selectedBranch !== 'all' ? `&branchId=${selectedBranch}` : ''
         }`
       );
       setSummary(res.data);
     } catch (err) {
-      setSummary({
-        id: 'summary-mock-1',
-        summaryText: `Today we processed 152 orders generating ₹1,48,920 in gross revenue. Operational efficiency maintained at 98.4%.`,
-        aiNarrativeText: `Today was 18.4% above average revenue, driven by a surge in delivery orders during 7-9 PM. Food cost maintained a healthy 28% margin. Tomatoes require reordering within 48 hours.`,
-        anomaliesJson: [
-          '35% increase in dinner delivery volume',
-          'Paneer Tikka prep time +6 mins above threshold',
-          'Tomato stock depletion rate +22%',
-        ],
-        salesTotalMinor: 14892000,
-        orderCount: 152,
-        generatedBy: 'AI Copilot Engine',
-        aiModelProvider: 'OPENAI',
-        aiModelName: 'gpt-4o-mini',
-        generatedAt: new Date().toISOString(),
-      });
+      console.error('Failed to fetch summary:', err);
+      setError(true);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleEnrichAi() {
-    if (!summary?.id) return;
+    if (!summary?.id || !organizationId) return;
     setEnriching(true);
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
       const res = await api.post('/v1/ai/summaries/enrich', {
         summaryId: summary.id,
         organizationId,
       });
       setSummary(res.data);
     } catch (err) {
-      console.log('Enrich failed', err);
+      console.error('Enrich failed:', err);
     } finally {
       setEnriching(false);
     }
@@ -172,6 +163,14 @@ export default function DailySummaryReport() {
             Generating executive daily narrative...
           </Text>
         </View>
+      ) : error ? (
+        <ErrorState onRetry={fetchSummary} />
+      ) : !summary ? (
+        <EmptyState 
+          icon="document-text-outline" 
+          title="No Data Available" 
+          description="There is no daily summary report for the selected date."
+        />
       ) : (
         <>
           {/* AI Narrative Card */}

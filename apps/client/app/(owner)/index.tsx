@@ -3,10 +3,14 @@ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'rea
 import { useRouter } from 'expo-router';
 import { api } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { EmptyState } from '../../components/ui/EmptyState';
+
 
 export default function OwnerDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [kpis, setKpis] = useState<any>(null);
   const [insights, setInsights] = useState<any[]>([]);
 
@@ -23,33 +27,10 @@ export default function OwnerDashboard() {
       ]);
       setKpis(kpiRes.data);
       setInsights(aiRes.data?.insights || []);
+      setError(false);
     } catch (err) {
-      setKpis({
-        totalRevenue: 148920,
-        orderCount: 184,
-        averageTicketSize: 809.34,
-        topItem: { name: 'Special Butter Chicken Combo', qty: 64 },
-      });
-      setInsights([
-        {
-          id: 'mock-1',
-          insightType: 'SALES_SURGE',
-          severity: 'HIGH',
-          title: 'Delivery Revenue Surge (+38% Rush Hour)',
-          body: 'Delivery orders spiked between 7 PM - 9 PM across Downtown and Uptown branches.',
-          recommendation: 'Assign 2 dedicated packaging staff to reduce kitchen dispatch latency by 5 mins.',
-          status: 'NEW',
-        },
-        {
-          id: 'mock-2',
-          insightType: 'STOCK_OUT_PREDICTION',
-          severity: 'CRITICAL',
-          title: 'Tomato Stock Out Predicted in 48 Hours',
-          body: 'Current stock of 18kg will be depleted before Friday evening dinner rush.',
-          recommendation: 'Reorder 50kg from Supplier X (Best rate ₹24/kg available today).',
-          status: 'NEW',
-        },
-      ]);
+      console.error(err);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -57,101 +38,129 @@ export default function OwnerDashboard() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#030712', justifyContent: 'center', alignItems: 'center' }}>
+      <View className="flex-1 bg-slate-950 justify-center items-center">
         <ActivityIndicator size="large" color="#f59e0b" />
-        <Text style={{ fontSize: 13, color: '#94a3b8', marginTop: 12 }}>Loading Executive Dashboard...</Text>
+        <Text className="text-sm font-medium text-slate-400 mt-4">Loading Executive Dashboard...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 bg-slate-950 p-6 sm:p-8">
+        <ErrorState onRetry={loadData} />
+      </View>
+    );
+  }
+
+  if (!kpis) {
+    return (
+      <View className="flex-1 bg-slate-950 p-6 sm:p-8">
+        <EmptyState title="No Dashboard Data" description="No data is available yet for this organization." />
       </View>
     );
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#030712', padding: 28 }}>
+    <ScrollView className="flex-1 bg-slate-950 p-6 sm:p-8">
       {/* Top Banner Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+      <View className="flex-row justify-between items-center mb-8 flex-wrap gap-4">
         <View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Text style={{ fontSize: 32, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 }}>Executive Dashboard</Text>
-            <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.3)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 9999 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#34d399' }}>Live Analytics</Text>
+          <View className="flex-row items-center gap-3">
+            <Text className="text-3xl font-extrabold text-white tracking-tight">Executive Dashboard</Text>
+            <View className="bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full">
+              <Text className="text-xs font-bold text-emerald-400">Live Analytics</Text>
             </View>
           </View>
-          <Text style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>Real-time multi-branch performance KPIs & AI supply chain predictions</Text>
+          <Text className="text-sm text-slate-400 mt-1">Real-time multi-branch performance KPIs & AI supply chain predictions</Text>
         </View>
 
         <TouchableOpacity
           onPress={() => router.push('/(owner)/insights')}
-          style={{ backgroundColor: '#4f46e5', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 8, shadowColor: '#4f46e5', shadowRadius: 10, shadowOpacity: 0.3 }}
+          className="bg-indigo-600 hover:bg-indigo-500 px-5 py-3 rounded-xl flex-row items-center gap-2 shadow-lg shadow-indigo-600/30"
         >
           <Ionicons name="sparkles" size={16} color="#ffffff" />
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#ffffff' }}>AI Insights Orchestrator →</Text>
+          <Text className="text-sm font-bold text-white">AI Insights Orchestrator →</Text>
         </TouchableOpacity>
       </View>
 
       {/* KPI Cards Row */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
-        <View style={{ flex: 1, minWidth: 220, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#1e293b', borderRadius: 16, padding: 20 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Today's Gross Sales</Text>
+      <View className="flex-row flex-wrap gap-4 mb-8">
+        <View className="flex-1 min-w-[220px] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Today's Gross Sales</Text>
             <Ionicons name="cash-outline" size={20} color="#f59e0b" />
           </View>
-          <Text style={{ fontSize: 32, fontWeight: '800', color: '#ffffff' }}>₹{kpis?.totalRevenue?.toLocaleString('en-IN')}</Text>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#34d399', marginTop: 8 }}>+18.4% vs previous period</Text>
+          <Text className="text-3xl font-extrabold text-white mb-2">₹{kpis?.totalRevenue?.toLocaleString('en-IN')}</Text>
+          <Text className="text-xs font-bold text-emerald-400">+18.4% vs previous period</Text>
         </View>
 
-        <View style={{ flex: 1, minWidth: 220, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#1e293b', borderRadius: 16, padding: 20 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Completed Orders</Text>
+        <View className="flex-1 min-w-[220px] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Completed Orders</Text>
             <Ionicons name="receipt-outline" size={20} color="#6366f1" />
           </View>
-          <Text style={{ fontSize: 32, fontWeight: '800', color: '#ffffff' }}>{kpis?.orderCount} Orders</Text>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#818cf8', marginTop: 8 }}>+14 orders today</Text>
+          <Text className="text-3xl font-extrabold text-white mb-2">{kpis?.orderCount} Orders</Text>
+          <Text className="text-xs font-bold text-indigo-400">+14 orders today</Text>
         </View>
 
-        <View style={{ flex: 1, minWidth: 220, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#1e293b', borderRadius: 16, padding: 20 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Average Ticket Value</Text>
+        <View className="flex-1 min-w-[220px] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Average Ticket Value</Text>
             <Ionicons name="pie-chart-outline" size={20} color="#10b981" />
           </View>
-          <Text style={{ fontSize: 32, fontWeight: '800', color: '#ffffff' }}>₹{kpis?.averageTicketSize?.toFixed(2)}</Text>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#34d399', marginTop: 8 }}>+4.2% average ticket</Text>
+          <Text className="text-3xl font-extrabold text-white mb-2">₹{kpis?.averageTicketSize?.toFixed(2)}</Text>
+          <Text className="text-xs font-bold text-emerald-400">+4.2% average ticket</Text>
         </View>
 
-        <View style={{ flex: 1, minWidth: 220, backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#1e293b', borderRadius: 16, padding: 20 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Top Selling Dish</Text>
+        <View className="flex-1 min-w-[220px] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Top Selling Dish</Text>
             <Ionicons name="restaurant-outline" size={20} color="#a855f7" />
           </View>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: '#ffffff' }}>{kpis?.topItem?.name}</Text>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#c084fc', marginTop: 8 }}>{kpis?.topItem?.qty} orders sold</Text>
+          <Text className="text-xl font-extrabold text-white mb-2 leading-tight">{kpis?.topItem?.name}</Text>
+          <Text className="text-xs font-bold text-purple-400">{kpis?.topItem?.qty} orders sold</Text>
         </View>
       </View>
 
       {/* AI Recommendations */}
-      <View style={{ backgroundColor: '#0f172a', borderWidth: 1, borderColor: '#1e293b', borderRadius: 20, padding: 24, marginBottom: 28 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: '#ffffff' }}>✨ AI Smart Recommendations & Operational Alerts</Text>
-          <TouchableOpacity onPress={() => router.push('/(owner)/insights')} style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#818cf8' }}>View All Feed →</Text>
+      <View className="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-6 mb-8 shadow-xl">
+        <View className="flex-row justify-between items-center mb-6">
+          <Text className="text-xl font-extrabold text-white">✨ AI Smart Recommendations & Alerts</Text>
+          <TouchableOpacity 
+            onPress={() => router.push('/(owner)/insights')} 
+            className="bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-xl"
+          >
+            <Text className="text-xs font-bold text-indigo-400">View All Feed →</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ gap: 12 }}>
+        <View className="gap-4">
           {insights.map((item) => (
-            <View key={item.id} style={{ backgroundColor: '#030712', borderWidth: 1, borderColor: '#1e293b', borderRadius: 12, padding: 16 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <View style={{ backgroundColor: item.severity === 'CRITICAL' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)', borderWidth: 1, borderColor: item.severity === 'CRITICAL' ? 'rgba(244, 63, 94, 0.4)' : 'rgba(245, 158, 11, 0.4)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: item.severity === 'CRITICAL' ? '#fb7185' : '#fbbf24' }}>{item.severity}</Text>
+            <View key={item.id} className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-5 hover:border-indigo-500/30 transition-colors">
+              <View className="flex-row justify-between items-center mb-3">
+                <View className="flex-row items-center gap-3">
+                  <View className={`border px-2.5 py-0.5 rounded-lg ${
+                    item.severity === 'CRITICAL' ? 'bg-rose-500/10 border-rose-500/30' : 'bg-amber-500/10 border-amber-500/30'
+                  }`}>
+                    <Text className={`text-[10px] font-extrabold ${
+                      item.severity === 'CRITICAL' ? 'text-rose-400' : 'text-amber-400'
+                    }`}>{item.severity}</Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: '#ffffff' }}>{item.title}</Text>
+                  <Text className="text-base font-bold text-white">{item.title}</Text>
                 </View>
-                <Text style={{ fontSize: 11, fontFamily: 'monospace', color: '#64748b' }}>{item.insightType}</Text>
+                <Text className="text-[10px] font-mono text-slate-500">{item.insightType}</Text>
               </View>
-              <Text style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 20, marginBottom: 8 }}>{item.body}</Text>
+              
+              <Text className="text-sm text-slate-300 leading-relaxed mb-4">{item.body}</Text>
+              
               {item.recommendation && (
-                <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.2)', padding: 10, borderRadius: 8 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#818cf8', textTransform: 'uppercase', marginBottom: 2 }}>Action Recommendation</Text>
-                  <Text style={{ fontSize: 12, color: '#c7d2fe' }}>{item.recommendation}</Text>
+                <View className="bg-indigo-500/10 border border-indigo-500/20 p-3.5 rounded-xl flex-row items-start">
+                  <Ionicons name="bulb" size={16} color="#818cf8" style={{ marginTop: 2, marginRight: 8 }} />
+                  <View className="flex-1">
+                    <Text className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-wider mb-1">Action Recommendation</Text>
+                    <Text className="text-xs font-medium text-indigo-100/80 leading-relaxed">{item.recommendation}</Text>
+                  </View>
                 </View>
               )}
             </View>

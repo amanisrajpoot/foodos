@@ -4,9 +4,14 @@ import { api } from '../../../services/api';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../../stores/auth.store';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { EmptyState } from '../../../components/ui/EmptyState';
 
 export default function AiInsightsFeed() {
+  const organizationId = useAuthStore(state => state.organizationId);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [insights, setInsights] = useState<any[]>([]);
   const [selectedType, setSelectedType] = useState('ALL');
@@ -21,97 +26,56 @@ export default function AiInsightsFeed() {
 
   async function fetchInsights() {
     setLoading(true);
+    setError(false);
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
+      if (!organizationId) throw new Error('No Organization ID');
       let query = `/v1/ai/insights?organizationId=${organizationId}`;
       if (selectedType !== 'ALL') query += `&insightType=${selectedType}`;
       if (selectedStatus !== 'ALL') query += `&status=${selectedStatus}`;
       const res = await api.get(query);
       setInsights(res.data || []);
     } catch (err) {
-      setInsights([
-        {
-          id: 'insight-1',
-          insightType: 'SALES_SURGE',
-          severity: 'HIGH',
-          title: 'Delivery Revenue Surge (7 PM - 9 PM)',
-          body: 'Delivery orders surged 35% compared to last week during dinner rush. Top contributor: Butter Chicken combo meals.',
-          recommendation: 'Ensure 2 dedicated packing staff are assigned between 6:30 PM and 9:30 PM to reduce dispatch latency.',
-          modelProvider: 'OPENAI',
-          modelName: 'gpt-4o-mini',
-          confidenceScore: 0.94,
-          status: 'NEW',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'insight-2',
-          insightType: 'STOCK_OUT_PREDICTION',
-          severity: 'CRITICAL',
-          title: 'Tomatoes Stock Depletion Risk in 48h',
-          body: 'Tomatoes will run out in 2 days based on current usage pattern.',
-          recommendation: 'Reorder 50kg from Supplier X — best price in last 30 days.',
-          modelProvider: 'OPENAI',
-          modelName: 'gpt-4o-mini',
-          confidenceScore: 0.89,
-          status: 'NEW',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'insight-3',
-          insightType: 'PREP_DELAY',
-          severity: 'MEDIUM',
-          title: 'Kitchen Ticket Prep Delay on Starters',
-          body: 'Average prep time for Paneer Tikka spiked to 18 mins (target: 12 mins) during peak lunch hours.',
-          recommendation: 'Pre-marinate additional 5kg Paneer during morning prep shift.',
-          modelProvider: 'CUSTOM_LOCAL',
-          modelName: 'ollama-llama3',
-          confidenceScore: 0.86,
-          status: 'ACKNOWLEDGED',
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      console.error('Failed to fetch insights:', err);
+      setError(true);
     } finally {
       setLoading(false);
     }
   }
 
   async function updateInsightStatus(id: string, status: string) {
+    if (!organizationId) return;
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
       await api.patch(`/v1/ai/insights/${id}/status?organizationId=${organizationId}`, { status });
       setInsights((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
     } catch (err) {
-      console.log('Failed to update status', err);
+      console.error('Failed to update status:', err);
     }
   }
 
   async function handleTriggerGenerate() {
+    if (!organizationId) return;
     setGenerating(true);
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
       await api.post('/v1/ai/insights/generate', { organizationId });
       await fetchInsights();
     } catch (err) {
-      console.log('Failed to generate insights', err);
+      console.error('Failed to generate insights:', err);
     } finally {
       setGenerating(false);
     }
   }
 
   async function handleRunCustomPrompt() {
-    if (!customPrompt.trim()) return;
+    if (!customPrompt.trim() || !organizationId) return;
     setAnalyzingPrompt(true);
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
       const res = await api.post('/v1/ai/summaries/enrich', {
         organizationId,
         customPrompt,
       });
       setCustomAnalysis(res.data?.enrichedSummary || 'Analysis completed.');
     } catch (err) {
-      setCustomAnalysis(
-        `[LLM Simulated Response]: Based on your query "${customPrompt}", weekend lunch demand is projected to increase by 22%. Recommend increasing pre-packaged rice and naan stock by 15% before Saturday morning.`
-      );
+      setCustomAnalysis('Failed to process custom query. Please try again.');
     } finally {
       setAnalyzingPrompt(false);
     }
@@ -204,12 +168,14 @@ export default function AiInsightsFeed() {
           <ActivityIndicator size="large" color="#6366f1" />
           <Text className="text-slate-400 text-xs mt-2">Scanning multi-branch metrics...</Text>
         </View>
+      ) : error ? (
+        <ErrorState onRetry={fetchInsights} />
       ) : insights.length === 0 ? (
-        <Card>
-          <Text className="text-slate-400 text-sm text-center py-6">
-            No active insights match your selected filter criteria.
-          </Text>
-        </Card>
+        <EmptyState 
+          icon="sparkles-outline" 
+          title="No AI Insights Found" 
+          description="Your AI copilot has not generated any insights matching these filters."
+        />
       ) : (
         <View className="gap-4">
           {insights.map((item) => (

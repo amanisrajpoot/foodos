@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { api } from '../../../services/api';
+import { useAuthStore } from '../../../stores/auth.store';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ExportReports() {
+  const organizationId = useAuthStore(state => state.organizationId);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   const handleExportCSV = async () => {
+    if (!organizationId) return;
     setLoading(true);
+    setError(false);
     try {
-      // Simulate API call for CSV data
-      // const res = await api.get('/analytics/export?format=csv', { responseType: 'blob' });
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const dummyCsvData = "Date,Revenue,Orders\n2023-10-01,12000,105\n2023-10-02,13500,120\n";
+      const res = await api.get(`/v1/analytics/export?format=csv&organizationId=${organizationId}`, { responseType: 'blob' });
+      const csvData = res.data;
 
       if (Platform.OS === 'web') {
-        const blob = new Blob([dummyCsvData], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -23,35 +27,56 @@ export default function ExportReports() {
         link.click();
         document.body.removeChild(link);
       } else {
-        Alert.alert("Export Successful", "CSV data generated. (Share functionality pending for mobile)");
+        Alert.alert("Export Successful", "CSV data generated.");
       }
     } catch (err) {
-      Alert.alert("Export Failed", "Could not generate CSV.");
+      console.error("Export Failed", err);
+      setError(true);
+      if (Platform.OS !== 'web') {
+        Alert.alert("Export Failed", "Could not generate CSV.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView className="flex-1 bg-slate-50 p-4 sm:p-8">
-      <Text className="text-3xl font-bold text-slate-800 mb-6">Data Export</Text>
+    <ScrollView className="flex-1 bg-slate-950 p-6 sm:p-8">
+      {/* Header */}
+      <View className="mb-8">
+        <Text className="text-3xl font-extrabold text-white tracking-tight mb-2">Data Export</Text>
+        <Text className="text-slate-400 text-sm">Download business performance data for external analysis</Text>
+      </View>
       
-      <View className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-md">
-        <Text className="text-slate-600 text-lg mb-4">
-          Select a format to export all your business data for the current month.
+      <View className="bg-slate-900 p-8 rounded-[1.5rem] border border-slate-800 shadow-xl max-w-md">
+        <View className="flex-row items-center gap-3 mb-4">
+          <Ionicons name="cloud-download-outline" size={24} color="#6366f1" />
+          <Text className="text-white font-bold text-xl">Export Options</Text>
+        </View>
+
+        <Text className="text-slate-400 text-sm leading-relaxed mb-8">
+          Select a format to export all your business data for the current month. The system will compile orders, inventory changes, and revenue stats.
         </Text>
         
-        <View className="flex-col gap-4 mt-4">
+        {error && (
+          <View className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-lg mb-6">
+            <Text className="text-rose-400 text-xs text-center font-semibold">Failed to generate export. Please try again later.</Text>
+          </View>
+        )}
+
+        <View className="flex-col gap-4">
           <TouchableOpacity 
-            className={`bg-indigo-600 p-4 rounded-xl items-center shadow-sm ${loading ? 'opacity-50' : ''}`}
+            className={`bg-indigo-600 hover:bg-indigo-500 p-4 rounded-xl flex-row justify-center items-center gap-2 shadow-lg shadow-indigo-600/25 transition-all ${loading ? 'opacity-50' : ''}`}
             onPress={handleExportCSV}
             disabled={loading}
           >
-            <Text className="text-white font-bold text-lg">{loading ? 'Generating...' : 'Export as CSV'}</Text>
+            {loading ? <Ionicons name="refresh" size={18} color="#ffffff" /> : <Ionicons name="document-text-outline" size={18} color="#ffffff" />}
+            <Text className="text-white font-bold text-sm">{loading ? 'Generating CSV...' : 'Export as CSV'}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity className="bg-rose-500 p-4 rounded-xl items-center shadow-sm opacity-50" disabled>
-            <Text className="text-white font-bold text-lg">Export as PDF (Coming Soon)</Text>
+          <TouchableOpacity className="bg-slate-800 p-4 rounded-xl flex-row justify-center items-center gap-2 shadow-sm opacity-60" disabled>
+            <Ionicons name="document-outline" size={18} color="#94a3b8" />
+            <Text className="text-slate-400 font-bold text-sm">Export as PDF (Coming Soon)</Text>
           </TouchableOpacity>
         </View>
       </View>

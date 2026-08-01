@@ -5,13 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { auth } from '../../modules/auth/auth';
+import { getAuth } from '../../modules/auth/auth';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
+    const auth = await getAuth();
     // Validate session with Better Auth
     const session = await auth.api.getSession({
       headers: request.headers as HeadersInit,

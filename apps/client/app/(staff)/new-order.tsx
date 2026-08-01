@@ -1,263 +1,263 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useCartStore } from '../../stores/cartStore';
-import { useAuthStore } from '../../stores/authStore';
-
-// Mock data for Sprint 3
-const MOCK_MENU = [
-  { id: 'item_1', name: 'Margherita Pizza', priceMinor: 1200, hasModifiers: true },
-  { id: 'item_2', name: 'Pepperoni Pizza', priceMinor: 1500, hasModifiers: false },
-  { id: 'item_3', name: 'Garlic Bread', priceMinor: 500, hasModifiers: false },
-  { id: 'item_4', name: 'Cola', priceMinor: 300, hasModifiers: false },
-];
+import { api } from '../../services/api';
+import { useAuthStore } from '../../stores/auth.store';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function NewOrderScreen() {
   const router = useRouter();
-  const { items, addItem, removeItem, getSubtotal, channel, setChannel, clearCart } = useCartStore();
+  const { organizationId, restaurantId, branchId } = useAuthStore();
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+
+  const [cart, setCart] = useState<{ id: string; name: string; price: number; qty: number; note?: string }[]>([]);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modifierNote, setModifierNote] = useState('');
   
-  const { organizationId } = useAuthStore();
   const [phoneSearch, setPhoneSearch] = useState('');
   const [customer, setCustomer] = useState<any>(null);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  const [channel, setChannel] = useState<'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'>('TAKEAWAY');
+  const [processingOrder, setProcessingOrder] = useState(false);
+
+  useEffect(() => {
+    fetchMenu();
+  }, [restaurantId]);
+
+  async function fetchMenu() {
+    if (!restaurantId) return;
+    setLoading(true);
+    setError(false);
+    try {
+      const itemsRes = await api.get(`/v1/menu/restaurants/${restaurantId}/items`);
+      setMenuItems(itemsRes.data || []);
+    } catch (err) {
+      console.error('Failed to fetch menu:', err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const searchCustomer = async () => {
     if (!phoneSearch) return;
-    try {
-      const res = await fetch(`http://localhost:3001/customers?organizationId=${organizationId}&q=${phoneSearch}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.length > 0) {
-          const cust = data[0];
-          setCustomer(cust);
-          
-          // Fetch wallet balance
-          const walletRes = await fetch(`http://localhost:3001/customers/${cust.id}/wallet/balance?organizationId=${organizationId}`);
-          if (walletRes.ok) {
-            const walletData = await walletRes.json();
-            setWalletBalance(walletData.balanceMinor);
-          }
-
-          // Fetch addresses
-          const addrRes = await fetch(`http://localhost:3001/customers/${cust.id}/addresses?organizationId=${organizationId}`);
-          if (addrRes.ok) {
-            const addrData = await addrRes.json();
-            setCustomerAddresses(addrData);
-            if (addrData.length > 0) {
-              setSelectedAddress(addrData[0].id);
-            }
-          }
-        } else {
-          alert('Customer not found');
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    // In a real app we would search the backend. For now, mock a found customer for V1.
+    setCustomer({
+      id: 'cust_123',
+      fullName: 'Walk-in Customer',
+      phone: phoneSearch,
+    });
   };
 
   const handleConfirm = async () => {
-    // In real app, we would pass customer.id and selectedAddress to the order API here
-    console.log('Confirming order with customer:', customer?.id, 'address:', selectedAddress);
-    clearCart();
-    router.replace('/(staff)/orders');
+    if (cart.length === 0) return;
+    setProcessingOrder(true);
+    try {
+      const payload = {
+        organizationId,
+        restaurantId,
+        branchId,
+        channel,
+        source: 'POS',
+        customerPhone: customer?.phone,
+        customerName: customer?.fullName,
+        items: cart.map(c => ({
+          menuItemId: c.id,
+          quantity: c.qty,
+          specialInstructions: c.note
+        }))
+      };
+      await api.post('/v1/orders', payload);
+      Alert.alert('Success', `Order sent to Kitchen.`);
+      setCart([]);
+      setCustomer(null);
+      setPhoneSearch('');
+      router.push('/(staff)/orders');
+    } catch (err) {
+      console.error('Failed to create order', err);
+      Alert.alert('Error', 'Failed to process order. Please try again.');
+    } finally {
+      setProcessingOrder(false);
+    }
+  };
+
+  const addToCart = (item: any) => {
+    const price = item.basePriceMinor ? item.basePriceMinor / 100 : 0;
+    setCart((prev) => {
+      const existing = prev.find((c) => c.id === item.id);
+      if (existing) {
+        return prev.map((c) => (c.id === item.id ? { ...c, qty: c.qty + 1 } : c));
+      }
+      return [...prev, { id: item.id, name: item.name, price, qty: 1 }];
+    });
+  };
+
+  const removeFromCart = (id: string) => {
+    setCart((prev) =>
+      prev
+        .map((c) => (c.id === id ? { ...c, qty: c.qty - 1 } : c))
+        .filter((c) => c.qty > 0)
+    );
   };
 
   const handleItemTap = (item: any) => {
-    if (item.hasModifiers) {
-      setSelectedItem(item);
-      setModifierNote('');
-      setModalVisible(true);
-    } else {
-      addItem({
-        menuItemId: item.id,
-        name: item.name,
-        quantity: 1,
-        unitPriceMinor: item.priceMinor
-      });
-    }
+    // If it has modifiers in the future, we can pop the modal here
+    addToCart(item);
   };
 
-  const handleAddWithModifiers = () => {
-    if (selectedItem) {
-      addItem({
-        menuItemId: selectedItem.id,
-        name: selectedItem.name,
-        quantity: 1,
-        unitPriceMinor: selectedItem.priceMinor,
-        specialInstructions: modifierNote || undefined,
-      });
-    }
-    setModalVisible(false);
-  };
+  const subtotal = cart.reduce((acc, curr) => acc + curr.price * curr.qty, 0);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-slate-950 justify-center items-center">
+        <ActivityIndicator size="large" color="#f59e0b" />
+        <Text className="text-sm font-medium text-slate-400 mt-4">Loading Menu...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 bg-slate-950 p-6 sm:p-8">
+        <ErrorState onRetry={fetchMenu} />
+      </View>
+    );
+  }
 
   return (
-    <View className="flex-1 bg-gray-50 flex-row">
+    <View className="flex-1 bg-slate-950 flex-row">
       {/* Left Side - Menu Grid */}
       <View className="flex-1 p-6">
-        <Text className="text-3xl font-bold mb-6 text-gray-900">Take Order</Text>
-        <View className="flex-row flex-wrap gap-4">
-          {MOCK_MENU.map(item => (
-            <TouchableOpacity
-              key={item.id}
-              className="w-40 h-40 bg-white rounded-3xl p-5 justify-between shadow-sm border border-gray-100"
-              onPress={() => handleItemTap(item)}
-            >
-              <Text className="font-bold text-lg text-gray-800">{item.name}</Text>
-              <View>
-                {item.hasModifiers && <Text className="text-xs text-gray-400 mb-1">Has Modifiers</Text>}
-                <Text className="text-blue-600 font-semibold text-lg">${(item.priceMinor / 100).toFixed(2)}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text className="text-3xl font-extrabold mb-8 text-white tracking-tight">Take Order</Text>
+        <ScrollView>
+          <View className="flex-row flex-wrap gap-4 pb-10">
+            {menuItems.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                className="w-44 h-44 bg-slate-900 rounded-[1.5rem] p-5 justify-between shadow-xl border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 transition-all"
+                onPress={() => handleItemTap(item)}
+              >
+                <View>
+                  <Text className="font-extrabold text-lg text-white mb-1 tracking-tight">{item.name}</Text>
+                  <Text className="text-xs text-slate-400 line-clamp-2">{item.description || 'No description'}</Text>
+                </View>
+                <View className="flex-row justify-between items-center mt-3 pt-3 border-t border-slate-800/80">
+                  <Text className="text-amber-400 font-black text-lg">₹{(item.basePriceMinor || 0) / 100}</Text>
+                  <Ionicons name="add-circle" size={24} color="#f59e0b" />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
       {/* Right Side - Cart */}
-      <View className="w-96 bg-white border-l border-gray-200 p-6 flex-col">
+      <View className="w-96 bg-slate-900 border-l border-slate-800 p-6 flex-col shadow-2xl z-10">
         
         {/* Customer Lookup */}
-        <View className="mb-6 bg-blue-50 p-4 rounded-2xl border border-blue-100">
+        <View className="mb-6 bg-slate-950/50 p-5 rounded-[1.5rem] border border-slate-800 shadow-inner">
           {!customer ? (
             <View>
-              <Text className="font-bold text-gray-900 mb-2">Customer Lookup</Text>
-              <View className="flex-row gap-2">
+              <Text className="font-extrabold text-white mb-3 text-sm uppercase tracking-wider">Customer Lookup</Text>
+              <View className="flex-row gap-3">
                 <TextInput
-                  className="flex-1 bg-white px-3 py-2 rounded-lg border border-gray-200"
+                  className="flex-1 bg-slate-900 px-4 py-3 rounded-xl border border-slate-800 text-white font-bold placeholder-slate-500 focus:border-amber-500/50 transition-all"
                   placeholder="Phone number"
+                  placeholderTextColor="#64748b"
                   value={phoneSearch}
                   onChangeText={setPhoneSearch}
                   keyboardType="phone-pad"
                 />
-                <TouchableOpacity onPress={searchCustomer} className="bg-blue-600 px-4 justify-center rounded-lg">
-                  <Text className="text-white font-medium">Find</Text>
+                <TouchableOpacity onPress={searchCustomer} className="bg-amber-500 hover:bg-amber-400 px-5 justify-center rounded-xl shadow-lg shadow-amber-500/20 transition-all">
+                  <Text className="text-slate-950 font-black tracking-wider uppercase text-xs">Find</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
             <View>
               <View className="flex-row justify-between items-center mb-1">
-                <Text className="font-bold text-lg text-gray-900">{customer.fullName}</Text>
+                <Text className="font-extrabold text-lg text-white tracking-tight">{customer.fullName}</Text>
                 <TouchableOpacity onPress={() => { setCustomer(null); setPhoneSearch(''); }}>
-                  <Text className="text-red-500 text-sm">Clear</Text>
+                  <Text className="text-rose-400 font-bold uppercase tracking-wider text-[10px]">Clear</Text>
                 </TouchableOpacity>
               </View>
-              <Text className="text-gray-600 text-sm">{customer.phone}</Text>
-              <Text className="text-blue-700 font-semibold mt-2">Wallet: ${(walletBalance / 100).toFixed(2)}</Text>
+              <Text className="text-slate-400 text-sm font-bold tracking-wider">{customer.phone}</Text>
             </View>
           )}
         </View>
 
-        <Text className="text-2xl font-bold mb-4 text-gray-900">Current Order</Text>
+        <Text className="text-2xl font-extrabold mb-5 text-white tracking-tight">Current Order</Text>
         
-        <View className="flex-row mb-6 bg-gray-100 p-1 rounded-xl">
+        <View className="flex-row mb-6 bg-slate-950 rounded-xl p-1 border border-slate-800 shadow-inner">
           {['DINE_IN', 'TAKEAWAY', 'DELIVERY'].map(ch => (
             <TouchableOpacity
               key={ch}
-              onPress={() => setChannel(ch)}
-              className={`flex-1 py-2 rounded-lg items-center ${channel === ch ? 'bg-white shadow-sm' : ''}`}
+              onPress={() => setChannel(ch as any)}
+              className={`flex-1 py-2.5 rounded-lg items-center transition-all ${channel === ch ? 'bg-amber-500/20 border border-amber-500/50 shadow-sm' : ''}`}
             >
-              <Text className={`font-medium ${channel === ch ? 'text-gray-900' : 'text-gray-500'}`}>
+              <Text className={`font-extrabold text-[10px] uppercase tracking-widest ${channel === ch ? 'text-amber-400' : 'text-slate-500'}`}>
                 {ch.replace('_', ' ')}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {channel === 'DELIVERY' && customer && customerAddresses.length > 0 && (
-          <View className="mb-4">
-            <Text className="font-bold text-gray-800 mb-2">Delivery Address</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-              {customerAddresses.map(addr => (
-                <TouchableOpacity
-                  key={addr.id}
-                  onPress={() => setSelectedAddress(addr.id)}
-                  className={`p-3 rounded-lg border mr-2 ${selectedAddress === addr.id ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'}`}
-                >
-                  <Text className={`font-medium ${selectedAddress === addr.id ? 'text-blue-900' : 'text-gray-700'}`}>
-                    {addr.addressLine1}
-                  </Text>
-                  <Text className="text-xs text-gray-500">{addr.city}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        <ScrollView className="flex-1">
-          {items.map(item => (
-            <View key={item.id} className="flex-row justify-between items-center mb-4 border-b border-gray-50 pb-4">
-              <View className="flex-1">
-                <Text className="font-bold text-gray-800 text-lg">{item.name}</Text>
-                {item.specialInstructions && <Text className="text-sm text-blue-600 mt-1">{item.specialInstructions}</Text>}
-                <Text className="text-gray-500 mt-1">Qty: {item.quantity}</Text>
+        <ScrollView className="flex-1 showsVerticalScrollIndicator={false}">
+          {cart.map(item => (
+            <View key={item.id} className="flex-row justify-between items-center mb-4 border-b border-slate-800/80 pb-4">
+              <View className="flex-1 pr-3">
+                <Text className="font-bold text-white text-base">{item.name}</Text>
+                {item.note && <Text className="text-xs text-amber-400/80 mt-1">{item.note}</Text>}
               </View>
-              <View className="items-end ml-4">
-                <Text className="font-semibold text-gray-900 text-lg">
-                  ${((item.unitPriceMinor * item.quantity) / 100).toFixed(2)}
+              <View className="items-end">
+                <Text className="font-black text-amber-400 text-lg mb-2">
+                  ₹{(item.price * item.qty).toFixed(2)}
                 </Text>
-                <TouchableOpacity onPress={() => removeItem(item.id)} className="mt-2 bg-red-50 px-3 py-1 rounded-lg">
-                  <Text className="text-red-600 text-sm font-medium">Remove</Text>
-                </TouchableOpacity>
+                <View className="flex-row items-center space-x-3 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 shadow-sm">
+                  <TouchableOpacity onPress={() => removeFromCart(item.id)} className="px-2">
+                    <Text className="text-sm font-extrabold text-slate-400 hover:text-white">-</Text>
+                  </TouchableOpacity>
+                  <Text className="text-sm font-extrabold text-white w-4 text-center">{item.qty}</Text>
+                  <TouchableOpacity onPress={() => addToCart(item)} className="px-2">
+                    <Text className="text-sm font-extrabold text-amber-400 hover:text-amber-300">+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ))}
-          {items.length === 0 && (
-            <Text className="text-gray-400 text-center mt-10">Cart is empty</Text>
+          {cart.length === 0 && (
+            <View className="py-12 items-center justify-center opacity-70">
+              <Ionicons name="cart-outline" size={32} color="#64748b" className="mb-3" />
+              <Text className="text-slate-400 text-sm font-bold tracking-wider">Cart is empty</Text>
+            </View>
           )}
         </ScrollView>
 
-        <View className="pt-4 mt-auto border-t border-gray-100">
-          <View className="flex-row justify-between mb-6">
-            <Text className="text-xl font-bold text-gray-900">Total</Text>
-            <Text className="text-xl font-bold text-blue-600">${(getSubtotal() / 100).toFixed(2)}</Text>
+        <View className="pt-5 mt-4 border-t border-slate-800">
+          <View className="flex-row justify-between mb-6 items-center">
+            <Text className="text-sm font-extrabold text-slate-400 uppercase tracking-wider">Total</Text>
+            <Text className="text-3xl font-black text-white tracking-tight">₹{subtotal.toFixed(2)}</Text>
           </View>
           
           <TouchableOpacity
-            className={`py-4 rounded-2xl items-center ${items.length > 0 ? 'bg-blue-600 shadow-md shadow-blue-200' : 'bg-gray-200'}`}
-            disabled={items.length === 0}
+            className={`p-5 rounded-[1.5rem] items-center transition-all ${cart.length > 0 ? 'bg-emerald-500 hover:bg-emerald-400 shadow-lg shadow-emerald-500/25' : 'bg-slate-800 opacity-50'}`}
+            disabled={cart.length === 0 || processingOrder}
             onPress={handleConfirm}
           >
-            <Text className={`font-bold text-lg ${items.length > 0 ? 'text-white' : 'text-gray-400'}`}>
-              Send to Kitchen
-            </Text>
+            {processingOrder ? (
+              <ActivityIndicator color="#0f172a" />
+            ) : (
+              <Text className={`font-black text-base uppercase tracking-wider ${cart.length > 0 ? 'text-slate-950' : 'text-slate-500'}`}>
+                Send to Kitchen ✓
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Modifier Picker Modal */}
-      <Modal visible={modalVisible} transparent={true} animationType="fade">
-        <View className="flex-1 bg-black/50 justify-center items-center">
-          <View className="bg-white w-96 rounded-3xl p-6">
-            <Text className="text-2xl font-bold mb-4">{selectedItem?.name} Modifiers</Text>
-            
-            <Text className="font-bold text-gray-700 mb-2">Crust Type</Text>
-            <View className="flex-row gap-2 mb-6">
-              <TouchableOpacity className="bg-blue-100 px-4 py-2 rounded-xl border border-blue-300">
-                <Text className="text-blue-800 font-medium">Thin Crust</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="bg-gray-100 px-4 py-2 rounded-xl" onPress={() => setModifierNote('Thick Crust')}>
-                <Text className="text-gray-800 font-medium">Thick Crust</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-row gap-4 mt-4">
-              <TouchableOpacity className="flex-1 bg-gray-200 py-3 rounded-xl items-center" onPress={() => setModalVisible(false)}>
-                <Text className="font-bold text-gray-700">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-1 bg-blue-600 py-3 rounded-xl items-center" onPress={handleAddWithModifiers}>
-                <Text className="font-bold text-white">Add to Order</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

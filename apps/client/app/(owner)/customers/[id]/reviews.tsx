@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '../../../../stores/authStore';
+import { useAuthStore } from '../../../../../stores/auth.store';
 
 export default function CustomerReviewsScreen() {
   const { id } = useLocalSearchParams();

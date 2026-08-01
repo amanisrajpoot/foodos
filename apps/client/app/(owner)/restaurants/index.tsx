@@ -5,10 +5,15 @@ import { api } from '../../../services/api';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../../stores/auth.store';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { EmptyState } from '../../../components/ui/EmptyState';
 
 export default function RestaurantsScreen() {
   const router = useRouter();
+  const organizationId = useAuthStore(state => state.organizationId);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [restaurants, setRestaurants] = useState<any[]>([]);
 
   useEffect(() => {
@@ -17,38 +22,14 @@ export default function RestaurantsScreen() {
 
   async function fetchRestaurants() {
     setLoading(true);
+    setError(false);
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
-      const res = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
+      if (!organizationId) throw new Error('No Organization ID');
+      const res = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
       setRestaurants(res.data || []);
     } catch (err) {
-      setRestaurants([
-        {
-          id: 'rest-1',
-          name: 'Burger Palace',
-          slug: 'burger-palace',
-          cuisineTypes: ['FAST_FOOD', 'BURGERS'],
-          status: 'ACTIVE',
-          primaryContactName: 'John Owner',
-          primaryContactPhone: '+919876543210',
-          branches: [
-            { id: 'branch-1', name: 'Downtown Main Branch', status: 'ACTIVE', city: 'Mumbai' },
-            { id: 'branch-2', name: 'Uptown Express Counter', status: 'ACTIVE', city: 'Mumbai' },
-          ],
-        },
-        {
-          id: 'rest-2',
-          name: 'Spice Villa Bistro',
-          slug: 'spice-villa',
-          cuisineTypes: ['NORTH_INDIAN', 'MUGHLAI'],
-          status: 'ACTIVE',
-          primaryContactName: 'Rahul Verma',
-          primaryContactPhone: '+919812345678',
-          branches: [
-            { id: 'branch-3', name: 'Central Mall Food Court', status: 'ACTIVE', city: 'Pune' },
-          ],
-        },
-      ]);
+      console.error('Failed to fetch restaurants:', err);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -87,6 +68,16 @@ export default function RestaurantsScreen() {
           <ActivityIndicator size="large" color="#f59e0b" />
           <Text className="text-slate-400 text-xs mt-2">Loading brand portfolio...</Text>
         </View>
+      ) : error ? (
+        <ErrorState onRetry={fetchRestaurants} />
+      ) : restaurants.length === 0 ? (
+        <EmptyState 
+          icon="business-outline" 
+          title="No Brands Found" 
+          description="Register a new restaurant concept to get started." 
+          actionLabel="Create Concept"
+          onAction={() => router.push('/(onboarding)/create-restaurant')}
+        />
       ) : (
         <View className="flex-row flex-wrap gap-4">
           {restaurants.map((item) => (

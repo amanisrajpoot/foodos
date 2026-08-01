@@ -21,6 +21,24 @@ export class OrdersService {
     private readonly deliveryService: DeliveryService,
   ) {}
 
+  async getOrders(branchId: string) {
+    return this.prisma.order.findMany({
+      where: branchId ? { branchId } : undefined,
+      include: { items: true, customer: true, table: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  async getOrderById(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true, customer: true, table: true, deliveryAssignments: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return order;
+  }
+
   async createOrder(dto: any) {
     return this.prisma.$transaction(async (tx) => {
       // 1. Fetch menu items to snapshot prices

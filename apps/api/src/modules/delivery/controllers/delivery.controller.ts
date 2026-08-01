@@ -91,6 +91,11 @@ export class DeliveryController {
     return this.deliveryService.assignDriver(assignmentId, driverId);
   }
 
+  @Get('assignments/:id')
+  async getDeliveryAssignment(@Param('id') id: string) {
+    return this.deliveryService.getDeliveryAssignment(id);
+  }
+
   // --- Driver App Endpoints ---
 
   @Get('driver/:driverId/assignments')

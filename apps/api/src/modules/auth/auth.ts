@@ -1,21 +1,30 @@
-import { betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-const connectionString =
-  process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/foodos';
+let authInstance: any = null;
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+export const getAuth = async () => {
+  if (authInstance) return authInstance;
 
-export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: 'postgresql',
-  }),
-  emailAndPassword: {
-    enabled: true,
-  },
-});
+  const connectionString =
+    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/foodos';
+  
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
+  const prisma = new PrismaClient({ adapter });
+
+  const { betterAuth } = await import('better-auth');
+  const { prismaAdapter } = await import('better-auth/adapters/prisma');
+
+  authInstance = betterAuth({
+    database: prismaAdapter(prisma, {
+      provider: 'postgresql',
+    }),
+    emailAndPassword: {
+      enabled: true,
+    },
+  });
+
+  return authInstance;
+};

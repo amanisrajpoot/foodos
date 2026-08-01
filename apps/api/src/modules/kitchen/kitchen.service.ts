@@ -11,6 +11,23 @@ export class KitchenService {
 
   // In a real app this would be triggered by an event handler listening to 'orders.order.accepted.v1'
   // For Sprint 3, we can call this directly or simulate it
+  
+  async getActiveTickets(branchId: string) {
+    return this.prisma.kitchenTicket.findMany({
+      where: {
+        branchId,
+        status: { in: ['QUEUED', 'PREPARING', 'READY'] }
+      },
+      include: {
+        items: true,
+        order: {
+          include: { table: true }
+        }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+  }
+
   async generateTicketsForOrder(orderId: string) {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({

@@ -29,7 +29,7 @@ export default function RevenueReport() {
 
       <View className="bg-white p-4 rounded-xl border border-slate-200 mb-6">
         <Text className="text-lg font-semibold text-slate-700 mb-2">Revenue by Day (Current Week)</Text>
-        <VictoryChart theme={VictoryTheme.material} width={screenWidth > 600 ? 500 : screenWidth - 60} height={250}>
+        <VictoryChart theme={VictoryTheme.material as any} width={screenWidth > 600 ? 500 : screenWidth - 60} height={250}>
           <VictoryAxis />
           <VictoryAxis dependentAxis tickFormat={(x) => `₹${x}k`} />
           <VictoryBar data={weeklyData} style={{ data: { fill: "#10b981" } }} />

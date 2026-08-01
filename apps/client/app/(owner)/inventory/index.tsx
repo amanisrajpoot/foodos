@@ -37,7 +37,7 @@ export default function InventoryDashboard() {
       </View>
 
       {/* Critical Stock Warning Banner */}
-      <Card glow="rose" className="mb-6">
+      <Card glow="amber" className="mb-6">
         <View className="flex-row justify-between items-center flex-wrap gap-2">
           <View className="flex-row items-center space-x-3">
             <View className="w-10 h-10 bg-rose-500/20 rounded-xl items-center justify-center border border-rose-500/30">

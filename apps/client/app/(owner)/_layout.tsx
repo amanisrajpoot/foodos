@@ -25,9 +25,6 @@ export default function OwnerLayout() {
     { label: 'Brand Portfolio', icon: 'restaurant-outline', route: '/(owner)/restaurants' },
     { label: 'Inventory Center', icon: 'cube-outline', route: '/(owner)/inventory' },
     { label: 'Menu Catalog', icon: 'fast-food-outline', route: '/(owner)/menu' },
-    { label: 'Delivery Fleet', icon: 'bicycle-outline', route: '/(delivery)' },
-    { label: 'Kitchen KDS Board', icon: 'flame-outline', route: '/(kitchen)' },
-    { label: 'Staff POS Terminal', icon: 'card-outline', route: '/(staff)' },
     { label: 'Finance & Ledger', icon: 'cash-outline', route: '/(owner)/finance' },
   ];
 

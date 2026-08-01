@@ -2,10 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { api } from '../../../../services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { ErrorState } from '../../../../components/ui/ErrorState';
+import { EmptyState } from '../../../../components/ui/EmptyState';
+import { useAuthStore } from '../../../../stores/auth.store';
 
 export default function DiningTablesManagerScreen() {
   const { id } = useLocalSearchParams();
+  const organizationId = useAuthStore(state => state.organizationId);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [tables, setTables] = useState<any[]>([]);
   const [newLabel, setNewLabel] = useState('');
   const [newSection, setNewSection] = useState('Main Hall');
@@ -17,137 +23,157 @@ export default function DiningTablesManagerScreen() {
 
   async function fetchTables() {
     setLoading(true);
+    setError(false);
     try {
-      const res = await api.get(`/restaurants/branches/${id}/tables`);
+      const res = await api.get(`/v1/restaurants/branches/${id}/tables`);
       setTables(res.data || []);
     } catch (err) {
-      console.log('Failed to fetch tables, using mock data');
-      setTables([
-        { id: 'tbl-1', label: 'T-01', section: 'Main Hall', capacity: 2, status: 'AVAILABLE', qrCode: 'QR-001' },
-        { id: 'tbl-2', label: 'T-02', section: 'Main Hall', capacity: 4, status: 'OCCUPIED', qrCode: 'QR-002' },
-        { id: 'tbl-3', label: 'T-03', section: 'Main Hall', capacity: 4, status: 'AVAILABLE', qrCode: 'QR-003' },
-        { id: 'tbl-4', label: 'T-04', section: 'VIP Lounge', capacity: 6, status: 'RESERVED', qrCode: 'QR-004' },
-      ]);
+      console.error('Failed to fetch tables:', err);
+      setError(true);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleAddTable() {
-    if (!newLabel) return;
+    if (!newLabel || !organizationId) return;
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
       const newTable = {
         label: newLabel,
         section: newSection,
         capacity: parseInt(newCapacity, 10) || 4,
       };
-      const res = await api.post(`/restaurants/branches/${id}/tables`, {
+      await api.post(`/v1/restaurants/branches/${id}/tables`, {
         organizationId,
         tables: [newTable],
       });
       setNewLabel('');
       fetchTables();
     } catch (err) {
-      console.log('Failed to add table', err);
-      // Fallback add locally
-      setTables(prev => [
-        ...prev,
-        {
-          id: `tbl-${Date.now()}`,
-          label: newLabel,
-          section: newSection,
-          capacity: parseInt(newCapacity, 10) || 4,
-          status: 'AVAILABLE',
-          qrCode: `QR-${id}-${newLabel}`,
-        },
-      ]);
-      setNewLabel('');
+      console.error('Failed to add table:', err);
     }
   }
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" />
+      <View className="flex-1 bg-slate-950 justify-center items-center">
+        <ActivityIndicator size="large" color="#f59e0b" />
+        <Text className="text-sm font-medium text-slate-400 mt-4">Loading Floorplan...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 bg-slate-950 p-6 sm:p-8">
+        <ErrorState onRetry={fetchTables} />
       </View>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-slate-50 p-4 sm:p-8">
+    <ScrollView className="flex-1 bg-slate-950 p-6 sm:p-8">
       {/* Header */}
-      <View className="flex-row justify-between items-center mb-6 flex-wrap gap-4">
+      <View className="flex-row justify-between items-center mb-8 flex-wrap gap-4">
         <View>
-          <Text className="text-3xl font-bold text-slate-800">Dining Floorplan & Tables</Text>
-          <Text className="text-slate-500 text-sm">Manage dining room layout, table capacities, and contactless QR codes</Text>
+          <Text className="text-3xl font-extrabold text-white tracking-tight">Dining Floorplan & Tables</Text>
+          <Text className="text-slate-400 text-sm mt-1">Manage dining room layout, table capacities, and QR codes</Text>
         </View>
       </View>
 
       {/* Add New Table Form */}
-      <View className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6">
-        <Text className="text-lg font-bold text-slate-800 mb-3">+ Add New Dining Table</Text>
-        <View className="flex-row gap-3 flex-wrap items-end">
+      <View className="bg-slate-900 p-6 rounded-[1.5rem] border border-slate-800 shadow-xl mb-8">
+        <View className="flex-row items-center gap-2 mb-4">
+          <Ionicons name="add-circle-outline" size={20} color="#f8fafc" />
+          <Text className="text-lg font-extrabold text-white">Add New Dining Table</Text>
+        </View>
+        <View className="flex-row gap-4 flex-wrap items-end">
           <View className="flex-1 min-w-[120px]">
-            <Text className="text-xs font-semibold text-slate-500 mb-1">Table Label</Text>
-            <TextInput
-              className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800"
-              placeholder="e.g. T-05"
-              value={newLabel}
-              onChangeText={setNewLabel}
-            />
+            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Table Label</Text>
+            <View className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
+              <TextInput
+                className="text-slate-100 font-bold text-base outline-none"
+                placeholder="e.g. T-05"
+                placeholderTextColor="#64748b"
+                value={newLabel}
+                onChangeText={setNewLabel}
+              />
+            </View>
           </View>
           <View className="flex-1 min-w-[140px]">
-            <Text className="text-xs font-semibold text-slate-500 mb-1">Section / Floor</Text>
-            <TextInput
-              className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800"
-              placeholder="Main Hall / Rooftop"
-              value={newSection}
-              onChangeText={setNewSection}
-            />
+            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Section / Floor</Text>
+            <View className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
+              <TextInput
+                className="text-slate-100 font-bold text-base outline-none"
+                placeholder="Main Hall"
+                placeholderTextColor="#64748b"
+                value={newSection}
+                onChangeText={setNewSection}
+              />
+            </View>
           </View>
           <View className="flex-1 min-w-[100px]">
-            <Text className="text-xs font-semibold text-slate-500 mb-1">Capacity</Text>
-            <TextInput
-              className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800"
-              placeholder="4"
-              value={newCapacity}
-              onChangeText={setNewCapacity}
-              keyboardType="number-pad"
-            />
+            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Capacity</Text>
+            <View className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
+              <TextInput
+                className="text-slate-100 font-bold text-base outline-none"
+                placeholder="4"
+                placeholderTextColor="#64748b"
+                value={newCapacity}
+                onChangeText={setNewCapacity}
+                keyboardType="number-pad"
+              />
+            </View>
           </View>
           <TouchableOpacity
-            className={`px-5 py-3 rounded-lg ${newLabel ? 'bg-indigo-600' : 'bg-slate-300'}`}
+            className={`px-6 py-4 rounded-xl shadow-lg flex-row items-center justify-center ${newLabel ? 'bg-indigo-600 shadow-indigo-600/25 hover:bg-indigo-500' : 'bg-slate-800'}`}
             onPress={handleAddTable}
             disabled={!newLabel}
           >
-            <Text className="text-white font-semibold text-xs">Add Table</Text>
+            <Text className={`font-extrabold text-sm ${newLabel ? 'text-white' : 'text-slate-500'}`}>Add Table</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Floorplan Tables Grid */}
-      <View className="flex-row flex-wrap gap-4">
-        {tables.map(tbl => (
-          <View key={tbl.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm min-w-[200px] flex-1">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-xl font-bold text-slate-800">{tbl.label}</Text>
-              <View className={`px-2.5 py-0.5 rounded-full ${tbl.status === 'AVAILABLE' ? 'bg-emerald-100' : tbl.status === 'OCCUPIED' ? 'bg-amber-100' : 'bg-indigo-100'}`}>
-                <Text className={`text-xs font-bold ${tbl.status === 'AVAILABLE' ? 'text-emerald-800' : tbl.status === 'OCCUPIED' ? 'text-amber-800' : 'text-indigo-800'}`}>
-                  {tbl.status}
-                </Text>
+      {tables.length === 0 ? (
+        <EmptyState 
+          icon="restaurant-outline" 
+          title="No Tables Configured" 
+          description="Add a table above to start managing your floorplan."
+        />
+      ) : (
+        <View className="flex-row flex-wrap gap-5">
+          {tables.map(tbl => (
+            <View key={tbl.id} className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl min-w-[220px] flex-1">
+              <View className="flex-row justify-between items-center mb-3">
+                <Text className="text-2xl font-extrabold text-white">{tbl.label}</Text>
+                <View className={`px-2.5 py-0.5 rounded-lg border ${
+                  tbl.status === 'AVAILABLE' ? 'bg-emerald-500/10 border-emerald-500/30' : 
+                  tbl.status === 'OCCUPIED' ? 'bg-rose-500/10 border-rose-500/30' : 
+                  'bg-amber-500/10 border-amber-500/30'
+                }`}>
+                  <Text className={`text-[10px] font-extrabold ${
+                    tbl.status === 'AVAILABLE' ? 'text-emerald-400' : 
+                    tbl.status === 'OCCUPIED' ? 'text-rose-400' : 
+                    'text-amber-400'
+                  }`}>
+                    {tbl.status}
+                  </Text>
+                </View>
+              </View>
+
+              <Text className="text-xs text-slate-500 mb-1">SECTION: <Text className="font-bold text-slate-300">{tbl.section}</Text></Text>
+              <Text className="text-xs text-slate-500 mb-4">CAPACITY: <Text className="font-bold text-slate-300">{tbl.capacity} Persons</Text></Text>
+
+              <View className="pt-4 border-t border-slate-800/80 flex-row items-center gap-2">
+                <Ionicons name="qr-code-outline" size={14} color="#6366f1" />
+                <Text className="text-xs font-mono font-medium text-indigo-400">{tbl.qrCode || `QR-${tbl.label}`}</Text>
               </View>
             </View>
-
-            <Text className="text-xs text-slate-500 mb-1">Section: <Text className="font-semibold text-slate-700">{tbl.section}</Text></Text>
-            <Text className="text-xs text-slate-500 mb-3">Capacity: <Text className="font-semibold text-slate-700">{tbl.capacity} Persons</Text></Text>
-
-            <View className="pt-3 border-t border-slate-100 flex-row justify-between items-center">
-              <Text className="text-xs font-mono text-slate-400">📱 {tbl.qrCode || `QR-${tbl.label}`}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }

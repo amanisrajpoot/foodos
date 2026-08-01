@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../../components/ui/Card';
+import { FormInput } from '../../components/ui/FormInput';
+import { validateRequired, validateEmail, validatePhone } from '../../utils/validation';
 
 export default function CreateRestaurantScreen() {
   const router = useRouter();
@@ -16,8 +18,30 @@ export default function CreateRestaurantScreen() {
   const [contactPhone, setContactPhone] = useState('');
   const [contactEmail, setContactEmail] = useState('');
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleNext = () => {
-    if (!restaurantName) return;
+    // Validate
+    const newErrors: Record<string, string> = {};
+    const nameErr = validateRequired(restaurantName, 'Restaurant Brand Name');
+    if (nameErr) newErrors.restaurantName = nameErr;
+
+    if (contactEmail) {
+      const emailErr = validateEmail(contactEmail);
+      if (emailErr) newErrors.contactEmail = emailErr;
+    }
+    
+    if (contactPhone) {
+      const phoneErr = validatePhone(contactPhone);
+      if (phoneErr) newErrors.contactPhone = phoneErr;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     router.push({
       pathname: '/(onboarding)/create-branch',
       params: {
@@ -62,74 +86,77 @@ export default function CreateRestaurantScreen() {
 
         {/* Form Card */}
         <Card title="Brand Profile & Cuisines" glow="indigo">
-          <View className="gap-4">
-            <View>
-              <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Restaurant Brand Name *
-              </Text>
-              <TextInput
-                className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                placeholder="e.g. Royal Spice Bistro / Burger Kingdom"
-                placeholderTextColor="#64748b"
-                value={restaurantName}
-                onChangeText={setRestaurantName}
-              />
-            </View>
+          <View className="gap-2">
+            <FormInput
+              label="Restaurant Brand Name"
+              required
+              placeholder="e.g. Royal Spice Bistro / Burger Kingdom"
+              value={restaurantName}
+              onChangeText={(t) => { setRestaurantName(t); setErrors((e) => ({ ...e, restaurantName: '' })); }}
+              error={errors.restaurantName}
+              glowColor="indigo"
+            />
 
-            <View>
-              <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Cuisine Specialties (Comma Separated)
-              </Text>
-              <TextInput
-                className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                placeholder="NORTH_INDIAN, CHINESE, ITALIAN, FAST_FOOD"
-                placeholderTextColor="#64748b"
-                value={cuisineTypes}
-                onChangeText={setCuisineTypes}
-              />
-            </View>
+            <FormInput
+              label="Cuisine Specialties (Comma Separated)"
+              placeholder="NORTH_INDIAN, CHINESE, ITALIAN"
+              value={cuisineTypes}
+              onChangeText={setCuisineTypes}
+              glowColor="indigo"
+            />
 
-            <View>
-              <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Brand Description
-              </Text>
-              <TextInput
-                className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                placeholder="Authentic North Indian curries, tandoori grills, and fresh naan."
-                placeholderTextColor="#64748b"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-              />
-            </View>
+            <FormInput
+              label="Brand Description"
+              placeholder="Authentic North Indian curries..."
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              glowColor="indigo"
+            />
 
-            <View className="pt-2 border-t border-slate-800">
+            <View className="pt-2 border-t border-slate-800 mt-2">
               <Text className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
                 Primary Manager Contact Details
               </Text>
-              <View className="gap-3">
-                <TextInput
-                  className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                  placeholder="Manager Name (e.g. Rahul Verma)"
-                  placeholderTextColor="#64748b"
-                  value={contactName}
-                  onChangeText={setContactName}
-                />
-                <TextInput
-                  className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-slate-100 text-sm"
-                  placeholder="Manager Phone (+91 98765 43210)"
-                  placeholderTextColor="#64748b"
-                  value={contactPhone}
-                  onChangeText={setContactPhone}
-                  keyboardType="phone-pad"
-                />
+              
+              <FormInput
+                label="Manager Name"
+                placeholder="e.g. Rahul Verma"
+                value={contactName}
+                onChangeText={setContactName}
+                glowColor="indigo"
+              />
+              
+              <View className="flex-row gap-4">
+                <View className="flex-1">
+                  <FormInput
+                    label="Manager Phone"
+                    placeholder="+91 98765 43210"
+                    keyboardType="phone-pad"
+                    value={contactPhone}
+                    onChangeText={(t) => { setContactPhone(t); setErrors((e) => ({ ...e, contactPhone: '' })); }}
+                    error={errors.contactPhone}
+                    glowColor="indigo"
+                  />
+                </View>
+                <View className="flex-1">
+                  <FormInput
+                    label="Manager Email"
+                    placeholder="manager@restaurant.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={contactEmail}
+                    onChangeText={(t) => { setContactEmail(t); setErrors((e) => ({ ...e, contactEmail: '' })); }}
+                    error={errors.contactEmail}
+                    glowColor="indigo"
+                  />
+                </View>
               </View>
             </View>
 
             <TouchableOpacity
               onPress={handleNext}
-              disabled={!restaurantName}
-              className={`p-4 rounded-xl items-center mt-4 shadow-lg ${
+              className={`p-4 rounded-xl items-center mt-2 shadow-lg ${
                 restaurantName ? 'bg-indigo-600 shadow-indigo-500/25' : 'bg-slate-800'
               }`}
             >
