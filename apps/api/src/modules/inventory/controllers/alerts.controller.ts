@@ -1,7 +1,7 @@
 import { Controller, Get, Headers } from '@nestjs/common';
 import { AlertsService } from '../services/alerts.service';
 
-@Controller('v1/inventory/alerts')
+@Controller('inventory/alerts')
 export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
 

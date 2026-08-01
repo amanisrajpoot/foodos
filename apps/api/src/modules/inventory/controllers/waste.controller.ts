@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Headers } from '@nestjs/common';
 import { WasteService } from '../services/waste.service';
 
-@Controller('v1/inventory/waste')
+@Controller('inventory/waste')
 export class WasteController {
   constructor(private readonly wasteService: WasteService) {}
 

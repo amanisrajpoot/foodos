@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { StockService } from '../services/stock.service';
 
-@Controller('v1/inventory/stock')
+@Controller('inventory/stock')
 export class StockController {
   constructor(private readonly stockService: StockService) {}
 

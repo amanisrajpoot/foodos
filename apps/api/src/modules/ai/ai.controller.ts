@@ -12,7 +12,7 @@ import { AiInsightService } from './ai-insight.service';
 import { AiSummaryService } from './ai-summary.service';
 import { AiInventoryService } from './ai-inventory.service';
 
-@Controller('v1/ai')
+@Controller('ai')
 export class AiController {
   constructor(
     private readonly aiInsightService: AiInsightService,

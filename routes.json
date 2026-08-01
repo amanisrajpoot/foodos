@@ -1,0 +1,462 @@
+[
+  {
+    "method": "GET",
+    "path": "/v1"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/health"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/ai/insights"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/ai/insights/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/v1/ai/insights/:id/status"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/ai/insights/generate"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/ai/summaries/enrich"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/ai/inventory/predict"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/ai/dashboard"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/dashboard/today"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/dashboard/trends"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/reports/daily-summary"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/customers/:customerId/addresses"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers/:customerId/addresses"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/customers/:customerId/addresses/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/customers"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/customers/:customerId/reviews"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers/:customerId/reviews"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/customers/:customerId/reviews/:id/moderate"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/customers/:customerId/wallet/adjust"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers/:customerId/wallet/transactions"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers/:customerId/wallet/balance"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/delivery/drivers/onboard"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/delivery/drivers/:id/kyc"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/delivery/drivers"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/delivery/drivers/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/delivery/drivers/:id/status"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/delivery/drivers/:id/location"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/delivery/partners/configs"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/delivery/partners/configs"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/delivery/dispatch/auto"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/delivery/active"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/delivery/assignments/:id/assign"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/delivery/assignments/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/delivery/driver/:driverId/assignments"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/delivery/assignments/:id/status"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/finance/orgs/:orgId/taxes"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/finance/orgs/:orgId/taxes"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/finance/taxes/:id"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/finance/taxes/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/finance/orgs/:orgId/invoices"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/finance/invoices/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/finance/orders/:orderId/invoices"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/identity/users/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/identity/memberships/invite"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/identity/memberships/:id/accept"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/identity/memberships/:id/suspend"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/identity/roles"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/identity/roles/:orgId"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/integrations/providers/:organizationId"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/integrations/providers/:organizationId"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/integrations/webhooks/:providerKey"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/inventory/alerts"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/inventory/ingredients"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/inventory/ingredients/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/inventory/ingredients"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/v1/inventory/ingredients/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/inventory/purchase-orders"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/inventory/purchase-orders"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/inventory/purchase-orders/:id/receive"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/inventory/stock/lots"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/inventory/stock/adjust"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/v1/inventory/suppliers"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/inventory/suppliers"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/v1/inventory/waste"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/kitchen/tickets"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/kitchen/tickets/:id/status"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/kitchen/ticket-items/:id/status"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/menu/active/:branchId"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/restaurants/:restId/menus"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/menu/restaurants/:restId/menus"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/menu/menus/:id"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/menu/menus/:id"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/menu/menus/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/categories"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/menu/categories/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/items"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/menu/restaurants/:restId/items"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/menu/items/:id"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/menu/items/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/placements"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/modifier-groups"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/modifier-options"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/price-rules"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/menu/availability"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/orders/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/orders/:id/confirm"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/orders/:id/cancel"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/orders/:id/complete"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/organization/:organizationId"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/initiate"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/capture/:paymentId"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurants/onboard"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurants/branches/:id/activate"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurants/orgs"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/restaurants/orgs/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurants"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/restaurants/orgs/:orgId/restaurants"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/restaurants/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/restaurants/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurants/branches"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/restaurants/:id/branches"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/restaurants/branches/:branchId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/restaurants/branches/:branchId"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/restaurants/branches/:branchId/tables"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurants/branches/:branchId/tables"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/restaurants/branches/:branchId/settings"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/staff"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/staff/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/staff/orgs/:orgId"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/staff/:id"
+  }
+]

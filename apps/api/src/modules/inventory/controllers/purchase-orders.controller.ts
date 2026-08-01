@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PurchaseOrdersService } from '../services/purchase-orders.service';
 
-@Controller('v1/inventory/purchase-orders')
+@Controller('inventory/purchase-orders')
 export class PurchaseOrdersController {
   constructor(private readonly poService: PurchaseOrdersService) {}
 
