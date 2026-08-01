@@ -11,11 +11,11 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     
     // P2025: An operation failed because it depends on one or more records that were required but not found.
-    if (exception.code === 'P2025') {
-      this.logger.warn(`Prisma P2025 error caught: ${exception.message}`);
+    if (exception.code === 'P2025' || exception.code === 'P2003') {
+      this.logger.warn(`Prisma error caught (${exception.code}): ${exception.message}`);
       return response.status(HttpStatus.NOT_FOUND).json({
         statusCode: HttpStatus.NOT_FOUND,
-        message: 'Record not found',
+        message: 'Record or relation not found',
         error: 'Not Found'
       });
     }

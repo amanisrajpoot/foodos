@@ -3,84 +3,84 @@
     "module": "Health & System",
     "endpoint": "/health",
     "status": 200,
-    "latency": 885,
-    "preview": "{\"status\":\"ok\",\"timestamp\":\"2026-08-01T17:10:21.645Z\"}"
+    "latency": 478,
+    "preview": "{\"status\":\"ok\",\"timestamp\":\"2026-08-01T17:14:51.983Z\"}"
   },
   {
     "module": "Analytics",
     "endpoint": "/analytics/dashboard/today?organizationId=00000000-0000-0000-0000-000000000000",
     "status": 200,
-    "latency": 1601,
+    "latency": 1069,
     "preview": "{\"totalRevenue\":0,\"orderCount\":0,\"averageTicketSize\":0,\"topItem\":{\"name\":\"Unknown\",\"qty\":0}}"
   },
   {
     "module": "AI Core",
     "endpoint": "/ai/dashboard?organizationId=00000000-0000-0000-0000-000000000000",
     "status": 500,
-    "latency": 1074,
-    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
+    "latency": 1067,
+    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\",\"error\":\"Internal Server Error\"}"
   },
   {
     "module": "CRM",
     "endpoint": "/customers?organizationId=00000000-0000-0000-0000-000000000000",
     "status": 200,
-    "latency": 1002,
+    "latency": 1023,
     "preview": "[]"
   },
   {
     "module": "Orders",
     "endpoint": "/orders?branchId=00000000-0000-0000-0000-000000000000",
     "status": 200,
-    "latency": 1140,
+    "latency": 1228,
     "preview": "[]"
   },
   {
     "module": "Restaurants",
     "endpoint": "/restaurants/orgs/00000000-0000-0000-0000-000000000000/restaurants",
     "status": 200,
-    "latency": 550,
+    "latency": 546,
     "preview": "[]"
   },
   {
     "module": "Menu",
     "endpoint": "/menu/active/00000000-0000-0000-0000-000000000000",
-    "status": 500,
-    "latency": 381,
-    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
+    "status": 404,
+    "latency": 474,
+    "preview": "{\"message\":\"Branch not found\",\"error\":\"Not Found\",\"statusCode\":404}"
   },
   {
     "module": "Kitchen",
     "endpoint": "/kitchen/tickets?branchId=00000000-0000-0000-0000-000000000000",
     "status": 200,
-    "latency": 695,
+    "latency": 699,
     "preview": "[]"
   },
   {
     "module": "Delivery",
     "endpoint": "/delivery/active?branchId=00000000-0000-0000-0000-000000000000",
     "status": 200,
-    "latency": 727,
+    "latency": 734,
     "preview": "[]"
   },
   {
     "module": "Finance",
     "endpoint": "/finance/orgs/00000000-0000-0000-0000-000000000000/invoices",
     "status": 500,
-    "latency": 407,
+    "latency": 297,
     "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
   },
   {
     "module": "Identity",
     "endpoint": "/identity/roles/00000000-0000-0000-0000-000000000000",
     "status": 500,
-    "latency": 305,
+    "latency": 312,
     "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
   },
   {
     "module": "Inventory (Fixed)",
     "endpoint": "/inventory/ingredients",
     "status": 200,
-    "latency": 512,
+    "latency": 410,
     "preview": "[]"
   }
 ]
