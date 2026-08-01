@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Live Vercel API URL fallback
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api-amanisrajpoots-projects.vercel.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://foodos-pfl0o3qfc-amanisrajpoots-projects.vercel.app/v1';
 
 export const api = axios.create({
   baseURL: API_URL,
