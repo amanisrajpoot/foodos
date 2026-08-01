@@ -20,7 +20,7 @@ export default function OwnerDashboard() {
 
   async function loadData() {
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
+      const organizationId = '7ce267a4-8c78-4016-9e9a-6dd811a450e4';
       const [kpiRes, aiRes] = await Promise.all([
         api.get(`/analytics/dashboard/today?organizationId=${organizationId}`),
         api.get(`/ai/dashboard?organizationId=${organizationId}`),

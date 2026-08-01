@@ -28,9 +28,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     else if (email.includes('driver')) role = 'DRIVER';
     else if (email.includes('kitchen')) role = 'KITCHEN';
 
-    const orgId = email.includes('new') ? null : 'org_123';
-    const restId = email.includes('new') ? null : 'rest_123';
-    const bId = email.includes('new') ? null : 'branch_123';
+    const orgId = email.includes('new') ? null : '7ce267a4-8c78-4016-9e9a-6dd811a450e4';
+    const restId = email.includes('new') ? null : '82524edd-f5d7-480d-953d-fdacd92cbb13';
+    const bId = email.includes('new') ? null : '205b2068-c013-4295-bf14-0372c97e9174';
 
     set({ 
       isAuthenticated: true, 

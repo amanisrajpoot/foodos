@@ -45,7 +45,7 @@ export default function BranchControlPanelScreen() {
 
   async function saveSettings() {
     try {
-      const organizationId = '00000000-0000-0000-0000-000000000000';
+      const organizationId = '7ce267a4-8c78-4016-9e9a-6dd811a450e4';
       await api.put(`/restaurants/branches/${id}/settings`, {
         organizationId,
         acceptsDineIn: dineIn,
