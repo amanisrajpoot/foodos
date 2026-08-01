@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/providers/prisma/prisma.service';
 
 @Injectable()
@@ -128,7 +128,7 @@ export class MenuService {
     const branch = await this.prisma.branch.findUnique({
       where: { id: branchId },
     });
-    if (!branch) throw new Error('Branch not found');
+    if (!branch) throw new NotFoundException('Branch not found');
 
     // 2. Find active menu for this branch or restaurant
     const menu = await this.prisma.menu.findFirst({

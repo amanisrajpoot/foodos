@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/providers/prisma/prisma.service';
 
 @Injectable()
@@ -47,7 +47,7 @@ export class FinanceService {
       include: { items: true, branch: true, organization: true },
     });
 
-    if (!order) throw new Error('Order not found');
+    if (!order) throw new NotFoundException('Order not found');
 
     // Check if invoice already exists
     const existing = await this.prisma.invoice.findUnique({
