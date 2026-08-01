@@ -24,10 +24,10 @@ export default function BranchDirectoryScreen() {
     try {
       // Fetch restaurants for org first, then branches of first restaurant (simple case)
       if (!organizationId) throw new Error('No Organization ID');
-      const restRes = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
+      const restRes = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
       if (restRes.data && restRes.data.length > 0) {
         const restaurantId = restRes.data[0].id;
-        const res = await api.get(`/v1/restaurants/${restaurantId}/branches`);
+        const res = await api.get(`/restaurants/${restaurantId}/branches`);
         setBranches(res.data || []);
       } else {
         setBranches([]);

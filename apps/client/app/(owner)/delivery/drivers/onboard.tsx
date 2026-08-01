@@ -22,7 +22,7 @@ export default function DriverOnboardingScreen() {
       const organizationId = '00000000-0000-0000-0000-000000000000';
       const branchId = 'branch-1';
 
-      await api.post('/v1/delivery/drivers/onboard', {
+      await api.post('/delivery/drivers/onboard', {
         organizationId,
         branchId,
         name,

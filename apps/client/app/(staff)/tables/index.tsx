@@ -23,7 +23,7 @@ export default function TablesScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/restaurants/branches/${branchId}/tables`);
+      const res = await api.get(`/restaurants/branches/${branchId}/tables`);
       setTables(res.data || []);
     } catch (err) {
       console.error('Failed to fetch tables:', err);

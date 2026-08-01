@@ -33,7 +33,7 @@ export default function NewOrderScreen() {
     setLoading(true);
     setError(false);
     try {
-      const itemsRes = await api.get(`/v1/menu/restaurants/${restaurantId}/items`);
+      const itemsRes = await api.get(`/menu/restaurants/${restaurantId}/items`);
       setMenuItems(itemsRes.data || []);
     } catch (err) {
       console.error('Failed to fetch menu:', err);
@@ -71,7 +71,7 @@ export default function NewOrderScreen() {
           specialInstructions: c.note
         }))
       };
-      await api.post('/v1/orders', payload);
+      await api.post('/orders', payload);
       Alert.alert('Success', `Order sent to Kitchen.`);
       setCart([]);
       setCustomer(null);

@@ -25,7 +25,7 @@ export default function DiningTablesManagerScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/restaurants/branches/${id}/tables`);
+      const res = await api.get(`/restaurants/branches/${id}/tables`);
       setTables(res.data || []);
     } catch (err) {
       console.error('Failed to fetch tables:', err);
@@ -43,7 +43,7 @@ export default function DiningTablesManagerScreen() {
         section: newSection,
         capacity: parseInt(newCapacity, 10) || 4,
       };
-      await api.post(`/v1/restaurants/branches/${id}/tables`, {
+      await api.post(`/restaurants/branches/${id}/tables`, {
         organizationId,
         tables: [newTable],
       });

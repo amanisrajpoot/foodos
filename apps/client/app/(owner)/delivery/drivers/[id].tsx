@@ -21,7 +21,7 @@ export default function DriverProfileScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/delivery/drivers/${id}`);
+      const res = await api.get(`/delivery/drivers/${id}`);
       setDriver(res.data);
     } catch (err) {
       console.error('Failed to fetch driver profile:', err);
@@ -33,7 +33,7 @@ export default function DriverProfileScreen() {
 
   async function updateStatus(newStatus: string) {
     try {
-      await api.patch(`/v1/delivery/drivers/${id}/status`, { status: newStatus });
+      await api.patch(`/delivery/drivers/${id}/status`, { status: newStatus });
       setDriver((prev: any) => ({ ...prev, status: newStatus }));
     } catch (err) {
       console.error('Status update error', err);
@@ -42,7 +42,7 @@ export default function DriverProfileScreen() {
 
   async function verifyKyc(kycStatus: 'VERIFIED' | 'REJECTED') {
     try {
-      await api.patch(`/v1/delivery/drivers/${id}/kyc`, { kycStatus });
+      await api.patch(`/delivery/drivers/${id}/kyc`, { kycStatus });
       setDriver((prev: any) => ({ ...prev, kycStatus }));
     } catch (err) {
       console.error('KYC verify error:', err);

@@ -27,7 +27,7 @@ export default function IntegrationsScreen() {
     setError(false);
     try {
       if (!organizationId) return;
-      const res = await api.get(`/v1/integrations/providers/${organizationId}`);
+      const res = await api.get(`/integrations/providers/${organizationId}`);
       const rzp = res.data?.find((p: any) => p.providerName === 'RAZORPAY');
       if (rzp) {
         setRazorpayEnabled(rzp.isActive);
@@ -45,7 +45,7 @@ export default function IntegrationsScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.post(`/v1/integrations/providers/${organizationId}`, {
+      await api.post(`/integrations/providers/${organizationId}`, {
         providerName: 'RAZORPAY',
         isActive: razorpayEnabled,
         credentials: {

@@ -23,15 +23,15 @@ export default function OwnerOrdersFeed() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const restRes = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
+      const restRes = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
       let activeBranchId = 'branch-1';
       if (restRes.data && restRes.data.length > 0) {
-        const branchRes = await api.get(`/v1/restaurants/${restRes.data[0].id}/branches`);
+        const branchRes = await api.get(`/restaurants/${restRes.data[0].id}/branches`);
         if (branchRes.data && branchRes.data.length > 0) {
           activeBranchId = branchRes.data[0].id;
         }
       }
-      const res = await api.get(`/v1/orders?branchId=${activeBranchId}`);
+      const res = await api.get(`/orders?branchId=${activeBranchId}`);
       setOrders(res.data || []);
     } catch (err) {
       console.error('Failed to fetch orders:', err);

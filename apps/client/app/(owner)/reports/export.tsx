@@ -14,7 +14,7 @@ export default function ExportReports() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/analytics/export?format=csv&organizationId=${organizationId}`, { responseType: 'blob' });
+      const res = await api.get(`/analytics/export?format=csv&organizationId=${organizationId}`, { responseType: 'blob' });
       const csvData = res.data;
 
       if (Platform.OS === 'web') {

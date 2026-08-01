@@ -29,7 +29,7 @@ export default function DeliveryPartnerHubScreen() {
     if (!branchId) return;
     try {
       setError(false);
-      const res = await api.get(`/v1/delivery/active?branchId=${branchId}`);
+      const res = await api.get(`/delivery/active?branchId=${branchId}`);
       setAssignments(res.data || []);
     } catch (err) {
       console.error('Failed to fetch assignments', err);
@@ -51,7 +51,7 @@ export default function DeliveryPartnerHubScreen() {
     if (currentStatus === 'OUT_FOR_DELIVERY') nextStatus = 'DELIVERED';
 
     try {
-      await api.patch(`/v1/delivery/assignments/${id}/status`, { status: nextStatus });
+      await api.patch(`/delivery/assignments/${id}/status`, { status: nextStatus });
       showToast('success', `Status updated to ${nextStatus.replace(/_/g, ' ')}`);
       
       if (nextStatus === 'DELIVERED') {

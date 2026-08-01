@@ -20,7 +20,7 @@ export default function ManagerDashboard() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/analytics/dashboard/today?organizationId=${organizationId}&branchId=${branchId || ''}`);
+      const res = await api.get(`/analytics/dashboard/today?organizationId=${organizationId}&branchId=${branchId || ''}`);
       setKpis(res.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);

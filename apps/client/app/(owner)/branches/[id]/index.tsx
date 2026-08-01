@@ -26,7 +26,7 @@ export default function BranchControlPanelScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/restaurants/branches/${id}`);
+      const res = await api.get(`/restaurants/branches/${id}`);
       setBranch(res.data);
       if (res.data?.settings) {
         setDineIn(res.data.settings.acceptsDineIn);
@@ -46,7 +46,7 @@ export default function BranchControlPanelScreen() {
   async function saveSettings() {
     try {
       const organizationId = '00000000-0000-0000-0000-000000000000';
-      await api.put(`/v1/restaurants/branches/${id}/settings`, {
+      await api.put(`/restaurants/branches/${id}/settings`, {
         organizationId,
         acceptsDineIn: dineIn,
         acceptsTakeaway: takeaway,
@@ -63,7 +63,7 @@ export default function BranchControlPanelScreen() {
   async function toggleBranchStatus() {
     try {
       const newStatus = branch.status === 'ACTIVE' ? 'TEMPORARILY_CLOSED' : 'ACTIVE';
-      await api.patch(`/v1/restaurants/branches/${id}`, { status: newStatus });
+      await api.patch(`/restaurants/branches/${id}`, { status: newStatus });
       setBranch((prev: any) => ({ ...prev, status: newStatus }));
     } catch (err) {
       console.log('Toggle status error', err);

@@ -24,7 +24,7 @@ export default function PaymentsLogScreen() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const res = await api.get(`/v1/payments/organization/${organizationId}`);
+      const res = await api.get(`/payments/organization/${organizationId}`);
       setPayments(res.data || []);
     } catch (err) {
       console.error('Failed to fetch payments:', err);

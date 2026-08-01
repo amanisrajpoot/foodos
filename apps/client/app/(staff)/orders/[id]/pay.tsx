@@ -30,7 +30,7 @@ export default function PayOrderScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/orders/${id}`);
+      const res = await api.get(`/orders/${id}`);
       setOrder(res.data);
     } catch (err) {
       console.error('Failed to fetch order for payment:', err);
@@ -65,7 +65,7 @@ export default function PayOrderScreen() {
   const completeOrderPayment = async (successMessage: string) => {
     setProcessing(true);
     try {
-      await api.patch(`/v1/orders/${id}/complete`);
+      await api.patch(`/orders/${id}/complete`);
       Alert.alert('Success', successMessage, [
         { text: 'Print Receipt', onPress: () => router.push('/(staff)/orders') }
       ]);

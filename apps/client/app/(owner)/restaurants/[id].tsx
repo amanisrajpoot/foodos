@@ -25,7 +25,7 @@ export default function RestaurantDetailScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/restaurants/${id}`);
+      const res = await api.get(`/restaurants/${id}`);
       setRestaurant(res.data);
       setName(res.data?.name || '');
       setContactName(res.data?.primaryContactName || '');
@@ -40,7 +40,7 @@ export default function RestaurantDetailScreen() {
 
   async function handleSave() {
     try {
-      await api.patch(`/v1/restaurants/${id}`, {
+      await api.patch(`/restaurants/${id}`, {
         name,
         primaryContactName: contactName,
         primaryContactPhone: contactPhone,

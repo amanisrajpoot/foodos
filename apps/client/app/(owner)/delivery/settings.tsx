@@ -37,17 +37,17 @@ export default function DeliverySettingsScreen() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const restRes = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
+      const restRes = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
       let resolvedBranchId = 'branch-1';
       if (restRes.data && restRes.data.length > 0) {
-        const branchRes = await api.get(`/v1/restaurants/${restRes.data[0].id}/branches`);
+        const branchRes = await api.get(`/restaurants/${restRes.data[0].id}/branches`);
         if (branchRes.data && branchRes.data.length > 0) {
           resolvedBranchId = branchRes.data[0].id;
         }
       }
       setActiveBranchId(resolvedBranchId);
 
-      const res = await api.get(`/v1/delivery/partners/configs?branchId=${resolvedBranchId}`);
+      const res = await api.get(`/delivery/partners/configs?branchId=${resolvedBranchId}`);
       const configs = res.data || [];
 
       const local = configs.find((c: any) => c.provider === 'LOCAL_FLEET');
@@ -74,7 +74,7 @@ export default function DeliverySettingsScreen() {
     if (!organizationId) return;
     setSaving(true);
     try {
-      await api.put(`/v1/delivery/partners/configs?branchId=${activeBranchId}`, {
+      await api.put(`/delivery/partners/configs?branchId=${activeBranchId}`, {
         organizationId,
         provider,
         isEnabled,

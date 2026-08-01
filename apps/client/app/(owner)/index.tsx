@@ -23,7 +23,7 @@ export default function OwnerDashboard() {
       const organizationId = '00000000-0000-0000-0000-000000000000';
       const [kpiRes, aiRes] = await Promise.all([
         api.get(`/analytics/dashboard/today?organizationId=${organizationId}`),
-        api.get(`/v1/ai/dashboard?organizationId=${organizationId}`),
+        api.get(`/ai/dashboard?organizationId=${organizationId}`),
       ]);
       setKpis(kpiRes.data);
       setInsights(aiRes.data?.insights || []);

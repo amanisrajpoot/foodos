@@ -24,7 +24,7 @@ export default function InvoicesScreen() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const res = await api.get(`/v1/finance/orgs/${organizationId}/invoices`);
+      const res = await api.get(`/finance/orgs/${organizationId}/invoices`);
       setInvoices(res.data || []);
     } catch (err) {
       console.error('Failed to fetch invoices:', err);

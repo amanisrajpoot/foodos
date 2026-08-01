@@ -35,8 +35,8 @@ export default function StaffPOSHomeScreen() {
     setError(false);
     try {
       const [tablesRes, itemsRes] = await Promise.all([
-        api.get(`/v1/restaurants/branches/${branchId}/tables`),
-        api.get(`/v1/menu/restaurants/${restaurantId}/items`)
+        api.get(`/restaurants/branches/${branchId}/tables`),
+        api.get(`/menu/restaurants/${restaurantId}/items`)
       ]);
       setTables(tablesRes.data || []);
       
@@ -92,7 +92,7 @@ export default function StaffPOSHomeScreen() {
           quantity: c.qty
         }))
       };
-      await api.post('/v1/orders', payload);
+      await api.post('/orders', payload);
       Alert.alert('Success', `Payment of ₹${grandTotal.toFixed(2)} captured via ${paymentMethod}! Order sent to Kitchen.`);
       setCart([]);
       setShowCheckoutModal(false);

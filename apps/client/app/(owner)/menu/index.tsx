@@ -27,10 +27,10 @@ export default function MenuListScreen() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const restRes = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
+      const restRes = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
       if (restRes.data && restRes.data.length > 0) {
         const restId = restRes.data[0].id;
-        const res = await api.get(`/v1/menu/restaurants/${restId}/menus`);
+        const res = await api.get(`/menu/restaurants/${restId}/menus`);
         setMenus(res.data || []);
       } else {
         setMenus([]);

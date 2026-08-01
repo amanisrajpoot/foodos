@@ -45,7 +45,7 @@ export default function AiInsightsFeed() {
   async function updateInsightStatus(id: string, status: string) {
     if (!organizationId) return;
     try {
-      await api.patch(`/v1/ai/insights/${id}/status?organizationId=${organizationId}`, { status });
+      await api.patch(`/ai/insights/${id}/status?organizationId=${organizationId}`, { status });
       setInsights((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -56,7 +56,7 @@ export default function AiInsightsFeed() {
     if (!organizationId) return;
     setGenerating(true);
     try {
-      await api.post('/v1/ai/insights/generate', { organizationId });
+      await api.post('/ai/insights/generate', { organizationId });
       await fetchInsights();
     } catch (err) {
       console.error('Failed to generate insights:', err);
@@ -69,7 +69,7 @@ export default function AiInsightsFeed() {
     if (!customPrompt.trim() || !organizationId) return;
     setAnalyzingPrompt(true);
     try {
-      const res = await api.post('/v1/ai/summaries/enrich', {
+      const res = await api.post('/ai/summaries/enrich', {
         organizationId,
         customPrompt,
       });

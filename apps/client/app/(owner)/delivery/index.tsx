@@ -30,15 +30,15 @@ export default function ActiveDeliveriesScreen() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const restRes = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
+      const restRes = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
       let activeBranchId = 'branch-1';
       if (restRes.data && restRes.data.length > 0) {
-        const res = await api.get(`/v1/restaurants/${restRes.data[0].id}/branches`);
+        const res = await api.get(`/restaurants/${restRes.data[0].id}/branches`);
         if (res.data && res.data.length > 0) {
           activeBranchId = res.data[0].id;
         }
       }
-      const res = await api.get(`/v1/delivery/active?branchId=${activeBranchId}`);
+      const res = await api.get(`/delivery/active?branchId=${activeBranchId}`);
       setDeliveries(res.data || []);
     } catch (error) {
       console.error('Failed to fetch active deliveries:', error);
@@ -51,7 +51,7 @@ export default function ActiveDeliveriesScreen() {
   async function fetchAvailableDrivers() {
     try {
       const branchId = 'branch-1';
-      const res = await api.get(`/v1/delivery/drivers?branchId=${branchId}&status=AVAILABLE`);
+      const res = await api.get(`/delivery/drivers?branchId=${branchId}&status=AVAILABLE`);
       setDrivers(res.data || []);
     } catch (err) {
       console.error('Failed to fetch available drivers:', err);
@@ -62,7 +62,7 @@ export default function ActiveDeliveriesScreen() {
   async function handleAssignDriver(driverId: string) {
     if (!selectedAssignmentId) return;
     try {
-      await api.post(`/v1/delivery/assignments/${selectedAssignmentId}/assign`, { driverId });
+      await api.post(`/delivery/assignments/${selectedAssignmentId}/assign`, { driverId });
       setDispatchModalOpen(false);
       setSelectedAssignmentId(null);
       fetchActiveDeliveries();
@@ -73,7 +73,7 @@ export default function ActiveDeliveriesScreen() {
 
   async function handleUpdateStatus(assignmentId: string, status: string) {
     try {
-      await api.patch(`/v1/delivery/assignments/${assignmentId}/status`, { status });
+      await api.patch(`/delivery/assignments/${assignmentId}/status`, { status });
       fetchActiveDeliveries();
     } catch (err) {
       console.log('Status update error', err);

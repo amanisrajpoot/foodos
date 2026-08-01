@@ -25,7 +25,7 @@ export default function RestaurantsScreen() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      const res = await api.get(`/v1/restaurants/orgs/${organizationId}/restaurants`);
+      const res = await api.get(`/restaurants/orgs/${organizationId}/restaurants`);
       setRestaurants(res.data || []);
     } catch (err) {
       console.error('Failed to fetch restaurants:', err);

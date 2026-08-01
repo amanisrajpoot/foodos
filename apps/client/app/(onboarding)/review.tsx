@@ -18,7 +18,7 @@ export default function OnboardingReviewScreen() {
 
     try {
       // 1. Submit Full Onboarding Payload
-      const onboardRes = await api.post('/v1/restaurants/onboard', {
+      const onboardRes = await api.post('/restaurants/onboard', {
         legalName: params.legalName || 'FoodOS Restaurant',
         tradeName: params.tradeName,
         countryCode: params.countryCode || 'IN',
@@ -54,7 +54,7 @@ export default function OnboardingReviewScreen() {
 
       // 2. Activate Branch (if needed)
       if (branch?.id) {
-        await api.post(`/v1/restaurants/branches/${branch.id}/activate`);
+        await api.post(`/restaurants/branches/${branch.id}/activate`);
       }
 
       // 3. Update Auth Context & Navigate

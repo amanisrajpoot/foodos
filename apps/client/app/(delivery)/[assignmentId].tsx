@@ -23,7 +23,7 @@ export default function DeliveryDetailScreen() {
     try {
       setError(false);
       setLoading(true);
-      const res = await api.get(`/v1/delivery/assignments/${assignmentId}`);
+      const res = await api.get(`/delivery/assignments/${assignmentId}`);
       setAssignment(res.data);
     } catch (err) {
       console.error('Failed to fetch assignment', err);
@@ -55,7 +55,7 @@ export default function DeliveryDetailScreen() {
 
   const updateStatus = async (newStatus: string) => {
     try {
-      await api.patch(`/v1/delivery/assignments/${assignmentId}/status`, { status: newStatus });
+      await api.patch(`/delivery/assignments/${assignmentId}/status`, { status: newStatus });
       showToast('success', `Status updated to ${newStatus.replace(/_/g, ' ')}`);
       setAssignment((prev: any) => ({ ...prev, status: newStatus }));
       

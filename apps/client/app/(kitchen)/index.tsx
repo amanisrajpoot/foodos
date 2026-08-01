@@ -56,7 +56,7 @@ export default function KitchenDisplayScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/kitchen/tickets?branchId=${branchId}`);
+      const res = await api.get(`/kitchen/tickets?branchId=${branchId}`);
       setTickets(res.data || []);
     } catch (err) {
       console.error('Failed to fetch kitchen tickets', err);
@@ -73,7 +73,7 @@ export default function KitchenDisplayScreen() {
     setTickets(tickets.map((t) => (t.id === id ? { ...t, status: next } : t)));
 
     try {
-      await api.patch(`/v1/kitchen/tickets/${id}/status`, { status: next });
+      await api.patch(`/kitchen/tickets/${id}/status`, { status: next });
     } catch (err) {
       console.error('Failed to update ticket status', err);
       showToast('error', 'Failed to update ticket status');

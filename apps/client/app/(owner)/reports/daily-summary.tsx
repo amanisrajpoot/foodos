@@ -42,7 +42,7 @@ export default function DailySummaryReport() {
     if (!summary?.id || !organizationId) return;
     setEnriching(true);
     try {
-      const res = await api.post('/v1/ai/summaries/enrich', {
+      const res = await api.post('/ai/summaries/enrich', {
         summaryId: summary.id,
         organizationId,
       });

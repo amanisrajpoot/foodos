@@ -25,7 +25,7 @@ export default function ActiveOrdersScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/orders?branchId=${branchId}`);
+      const res = await api.get(`/orders?branchId=${branchId}`);
       setOrders(res.data || []);
     } catch (err) {
       console.error('Failed to fetch orders:', err);

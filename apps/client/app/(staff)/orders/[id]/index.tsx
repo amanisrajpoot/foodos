@@ -23,7 +23,7 @@ export default function OrderDetailScreen() {
     setLoading(true);
     setError(false);
     try {
-      const res = await api.get(`/v1/orders/${id}`);
+      const res = await api.get(`/orders/${id}`);
       setOrder(res.data);
     } catch (err) {
       console.error('Failed to fetch order detail:', err);
@@ -36,7 +36,7 @@ export default function OrderDetailScreen() {
   const markCompleted = async () => {
     setProcessing(true);
     try {
-      await api.patch(`/v1/orders/${id}/complete`);
+      await api.patch(`/orders/${id}/complete`);
       Alert.alert('Success', 'Order marked as completed.');
       fetchOrder();
     } catch (err) {
