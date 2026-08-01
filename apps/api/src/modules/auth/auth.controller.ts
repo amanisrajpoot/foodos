@@ -7,7 +7,7 @@ export class AuthController {
   @All('*')
   async handleAuth(@Req() req: any, @Res() res: any) {
     const auth = await getAuth();
-    const { toNodeHandler } = await import('better-auth/node');
+    const { toNodeHandler } = await (new Function("return import('better-auth/node')"))();
     const handler = toNodeHandler(auth);
     return handler(req, res);
   }

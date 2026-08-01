@@ -14,8 +14,8 @@ export const getAuth = async () => {
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
-  const { betterAuth } = await import('better-auth');
-  const { prismaAdapter } = await import('better-auth/adapters/prisma');
+  const { betterAuth } = await (new Function("return import('better-auth')"))();
+  const { prismaAdapter } = await (new Function("return import('better-auth/adapters/prisma')"))();
 
   authInstance = betterAuth({
     database: prismaAdapter(prisma, {

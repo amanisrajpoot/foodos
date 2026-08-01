@@ -1,0 +1,86 @@
+[
+  {
+    "module": "Health & System",
+    "endpoint": "/health",
+    "status": 200,
+    "latency": 455,
+    "preview": "{\"status\":\"ok\",\"timestamp\":\"2026-08-01T16:57:09.165Z\"}"
+  },
+  {
+    "module": "Analytics",
+    "endpoint": "/analytics/dashboard/today?organizationId=00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "latency": 1110,
+    "preview": "{\"totalRevenue\":0,\"orderCount\":0,\"averageTicketSize\":0,\"topItem\":{\"name\":\"Unknown\",\"qty\":0}}"
+  },
+  {
+    "module": "AI Core",
+    "endpoint": "/ai/dashboard?organizationId=00000000-0000-0000-0000-000000000000",
+    "status": 500,
+    "latency": 961,
+    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
+  },
+  {
+    "module": "CRM",
+    "endpoint": "/customers?organizationId=00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "latency": 1002,
+    "preview": "[]"
+  },
+  {
+    "module": "Orders",
+    "endpoint": "/orders?branchId=00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "latency": 1144,
+    "preview": "[]"
+  },
+  {
+    "module": "Restaurants",
+    "endpoint": "/restaurants/orgs/00000000-0000-0000-0000-000000000000/restaurants",
+    "status": 200,
+    "latency": 556,
+    "preview": "[]"
+  },
+  {
+    "module": "Menu",
+    "endpoint": "/menu/active/00000000-0000-0000-0000-000000000000",
+    "status": 500,
+    "latency": 406,
+    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
+  },
+  {
+    "module": "Kitchen",
+    "endpoint": "/kitchen/tickets?branchId=00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "latency": 771,
+    "preview": "[]"
+  },
+  {
+    "module": "Delivery",
+    "endpoint": "/delivery/active?branchId=00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "latency": 769,
+    "preview": "[]"
+  },
+  {
+    "module": "Finance",
+    "endpoint": "/finance/orgs/00000000-0000-0000-0000-000000000000/invoices",
+    "status": 500,
+    "latency": 299,
+    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
+  },
+  {
+    "module": "Identity",
+    "endpoint": "/identity/roles/00000000-0000-0000-0000-000000000000",
+    "status": 500,
+    "latency": 412,
+    "preview": "{\"statusCode\":500,\"message\":\"Internal server error\"}"
+  },
+  {
+    "module": "Inventory (Fixed)",
+    "endpoint": "/inventory/ingredients",
+    "status": 200,
+    "latency": 511,
+    "preview": "[]"
+  }
+]
