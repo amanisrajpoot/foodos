@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, FlatList, ActivityIndicator } 
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../stores/auth.store';
 import { Customer } from '@foodos/shared';
+import { api } from '../../../services/api';
 
 export default function CustomersScreen() {
   const router = useRouter();
@@ -21,13 +22,11 @@ export default function CustomersScreen() {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      // In a real app this would use the configured API endpoint
-      const res = await fetch(
-        `http://localhost:3001/customers?organizationId=${organizationId}${searchQuery ? `&q=${searchQuery}` : ''}`
+      const res = await api.get(
+        `/customers?organizationId=${organizationId}${searchQuery ? `&q=${searchQuery}` : ''}`
       );
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data);
+      if (res.status === 200) {
+        setCustomers(res.data);
       }
     } catch (e) {
       console.error('Failed to fetch customers', e);

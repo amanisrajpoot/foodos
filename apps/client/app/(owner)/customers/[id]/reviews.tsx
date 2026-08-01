@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../../../stores/auth.store';
+import { api } from '../../../../services/api';
 
 export default function CustomerReviewsScreen() {
   const { id } = useLocalSearchParams();
@@ -17,9 +18,9 @@ export default function CustomerReviewsScreen() {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/customers/${id}/reviews?organizationId=${organizationId}`);
-      if (res.ok) {
-        setReviews(await res.json());
+      const res = await api.get(`/customers/${id}/reviews?organizationId=${organizationId}`);
+      if (res.status === 200) {
+        setReviews(res.data);
       }
     } catch (e) {
       console.error(e);
@@ -30,11 +31,7 @@ export default function CustomerReviewsScreen() {
 
   const moderateReview = async (reviewId: string, status: string) => {
     try {
-      await fetch(`http://localhost:3001/customers/${id}/reviews/${reviewId}/moderate?organizationId=${organizationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
+      await api.patch(`/customers/${id}/reviews/${reviewId}/moderate?organizationId=${organizationId}`, { status });
       fetchReviews();
     } catch (e) {
       console.error(e);

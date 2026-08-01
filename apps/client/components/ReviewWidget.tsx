@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { api } from '../services/api';
 
 interface ReviewWidgetProps {
   organizationId: string;
@@ -21,18 +22,14 @@ export function ReviewWidget({ organizationId, customerId, orderId, onSubmitSucc
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:3001/customers/${customerId}/reviews?organizationId=${organizationId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rating,
-          comment,
-          orderId,
-          reviewSource: 'IN_APP',
-        }),
+      const res = await api.post(`/customers/${customerId}/reviews?organizationId=${organizationId}`, {
+        rating,
+        comment,
+        orderId,
+        reviewSource: 'IN_APP',
       });
 
-      if (res.ok) {
+      if (res.status === 201 || res.status === 200) {
         Alert.alert('Success', 'Thank you for your review!');
         setRating(0);
         setComment('');

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../../../stores/auth.store';
+import { api } from '../../../../services/api';
 
 export default function CustomerAddressesScreen() {
   const { id } = useLocalSearchParams();
@@ -17,9 +18,9 @@ export default function CustomerAddressesScreen() {
   const fetchAddresses = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/customers/${id}/addresses?organizationId=${organizationId}`);
-      if (res.ok) {
-        setAddresses(await res.json());
+      const res = await api.get(`/customers/${id}/addresses?organizationId=${organizationId}`);
+      if (res.status === 200) {
+        setAddresses(res.data);
       }
     } catch (e) {
       console.error(e);
@@ -30,9 +31,7 @@ export default function CustomerAddressesScreen() {
 
   const removeAddress = async (addressId: string) => {
     try {
-      await fetch(`http://localhost:3001/customers/${id}/addresses/${addressId}?organizationId=${organizationId}`, {
-        method: 'DELETE'
-      });
+      await api.delete(`/customers/${id}/addresses/${addressId}?organizationId=${organizationId}`);
       fetchAddresses();
     } catch (e) {
       console.error(e);

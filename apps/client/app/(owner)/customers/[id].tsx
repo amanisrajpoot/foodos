@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../../stores/auth.store';
+import { api } from '../../../services/api';
 
 export default function CustomerProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -22,16 +23,15 @@ export default function CustomerProfileScreen() {
     setLoading(true);
     try {
       const [custRes, walletRes] = await Promise.all([
-        fetch(`http://localhost:3001/customers/${id}?organizationId=${organizationId}`),
-        fetch(`http://localhost:3001/customers/${id}/wallet/balance?organizationId=${organizationId}`)
+        api.get(`/customers/${id}?organizationId=${organizationId}`),
+        api.get(`/customers/${id}/wallet/balance?organizationId=${organizationId}`)
       ]);
       
-      if (custRes.ok) {
-        setCustomer(await custRes.json());
+      if (custRes.status === 200) {
+        setCustomer(custRes.data);
       }
-      if (walletRes.ok) {
-        const wallet = await walletRes.json();
-        setWalletBalance(wallet.balanceMinor);
+      if (walletRes.status === 200) {
+        setWalletBalance(walletRes.data.balanceMinor);
       }
     } catch (e) {
       console.error('Failed to fetch customer profile', e);
