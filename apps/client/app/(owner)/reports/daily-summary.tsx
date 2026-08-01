@@ -25,7 +25,7 @@ export default function DailySummaryReport() {
     try {
       if (!organizationId) throw new Error('No Organization ID');
       const res = await api.get(
-        `/v1/analytics/reports/daily-summary?organizationId=${organizationId}&date=${selectedDate}${
+        `/analytics/reports/daily-summary?organizationId=${organizationId}&date=${selectedDate}${
           selectedBranch !== 'all' ? `&branchId=${selectedBranch}` : ''
         }`
       );

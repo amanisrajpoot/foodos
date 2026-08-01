@@ -29,7 +29,7 @@ export default function AiInsightsFeed() {
     setError(false);
     try {
       if (!organizationId) throw new Error('No Organization ID');
-      let query = `/v1/ai/insights?organizationId=${organizationId}`;
+      let query = `/ai/insights?organizationId=${organizationId}`;
       if (selectedType !== 'ALL') query += `&insightType=${selectedType}`;
       if (selectedStatus !== 'ALL') query += `&status=${selectedStatus}`;
       const res = await api.get(query);
